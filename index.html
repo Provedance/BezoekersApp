@@ -17,10 +17,11 @@ body{font-family:'Segoe UI',sans-serif;background:#f2f2f2;color:#222;-webkit-use
 @keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.04);}}
 .welcome-title{color:#333;font-size:2.8rem;font-weight:800;letter-spacing:2px;text-align:center;margin-bottom:12px;}
 .welcome-sub{color:#777;font-size:1.1rem;text-align:center;margin-bottom:36px;}
-.tap-indicator{color:#c0392b;font-size:1.4rem;font-weight:700;letter-spacing:4px;text-transform:uppercase;border:3px solid #c0392b;border-radius:50px;padding:20px 48px;animation:tapblink 1.6s ease-in-out infinite;margin-bottom:28px;}
+.tap-indicator{color:#c0392b;font-size:1.4rem;font-weight:700;letter-spacing:4px;text-transform:uppercase;border:3px solid #c0392b;border-radius:50px;padding:20px 48px;animation:tapblink 1.6s ease-in-out infinite;}
 .bhv-btn{display:inline-flex;align-items:center;gap:10px;background:rgba(192,57,43,.12);border:2px solid rgba(192,57,43,.4);color:#c0392b;border-radius:10px;padding:11px 24px;cursor:pointer;font-family:inherit;font-size:.88rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;transition:all .25s;white-space:nowrap;}
 .bhv-btn:hover{background:rgba(192,57,43,.2);border-color:#c0392b;}
 .bhv-btn .bhv-icon{width:30px;height:30px;background:#c0392b;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0;animation:bhvring 2.5s ease-in-out infinite;}
+.bhv-bottom-wrap{position:absolute;bottom:72px;left:50%;transform:translateX(-50%);}
 @keyframes tapblink{0%,100%{opacity:1;}50%{opacity:.4;}}
 .welcome-clock{position:absolute;bottom:28px;color:#999;font-size:1rem;letter-spacing:1px;}
 .welcome-lang{position:absolute;top:24px;right:24px;display:flex;gap:8px;}
@@ -97,6 +98,16 @@ input:focus,select:focus{outline:none;border-color:#c0392b;background:white;}
 .btn-danger:hover{background:#fdf2f2;}
 .btn-print{background:#6b6b6b;color:white;}
 .actions{display:flex;gap:12px;margin-top:16px;align-items:center;flex-wrap:wrap;}
+
+/* Uitcheck */
+.checkout-result{display:none;border-radius:10px;padding:20px 22px;margin-top:16px;text-align:center;}
+.checkout-result.found{background:#eafaf1;border:2px solid #27ae60;}
+.checkout-result.not-found{background:#fdf2f2;border:2px solid #c0392b;}
+.checkout-result .co-icon{font-size:2.8rem;margin-bottom:10px;}
+.checkout-result .co-title{font-size:1.1rem;font-weight:700;margin-bottom:4px;}
+.checkout-result.found .co-title{color:#1a7a47;}
+.checkout-result.not-found .co-title{color:#8b1a1a;}
+.checkout-result .co-sub{font-size:.88rem;color:#666;}
 .retention-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:1.5px solid #ddd;border-left:4px solid #c0392b;border-radius:8px;padding:11px 16px;font-size:.88rem;color:#444;margin-bottom:18px;}
 .retention-bar label{text-transform:none;letter-spacing:0;margin:0;}
 .retention-bar select{width:auto;padding:5px 10px;font-size:.88rem;border:1.5px solid #ddd;border-radius:6px;}
@@ -255,10 +266,13 @@ tbody tr:hover{background:#fdf2f2;}
   <div class="welcome-title" id="w-title">Welkom</div>
   <div class="welcome-sub" id="w-sub">Registreer uw bezoek</div>
   <div class="tap-indicator" id="w-tap" onclick="naarFormulier()">TIK OP HET SCHERM</div>
-  <button class="bhv-btn" onclick="openBHV(event)">
-    <span class="bhv-icon">🚨</span>
-    BHV / ONTRUIMING
-  </button>
+
+  <div class="bhv-bottom-wrap">
+    <button class="bhv-btn" onclick="openBHV(event)">
+      <span class="bhv-icon">🚨</span>
+      BHV / ONTRUIMING
+    </button>
+  </div>
 
   <div class="welcome-clock" id="welcome-clock"></div>
 </div>
@@ -377,6 +391,7 @@ tbody tr:hover{background:#fdf2f2;}
   </header>
   <div class="tab-bar">
     <button class="tab-btn active" id="tab-reg" onclick="showTab('reg')">📝 <span id="t-tab-reg">Registreren</span></button>
+    <button class="tab-btn" id="tab-out" onclick="showTab('out')">🚪 <span id="t-tab-out">Uitchecken</span></button>
   </div>
   <div id="pane-reg" class="container">
     <div class="card">
@@ -405,6 +420,26 @@ tbody tr:hover{background:#fdf2f2;}
       </div>
       <div class="actions">
         <button class="btn btn-primary" id="btn-registreer" onclick="registreer()" disabled></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- UITCHECK PANE -->
+  <div id="pane-out" class="container" style="display:none">
+    <div class="card">
+      <h2 id="t-out-title">Uitchecken</h2>
+      <p style="font-size:.9rem;color:#666;margin-bottom:18px;" id="t-out-sub">Vul uw naam in om uw vertrek te registreren.</p>
+      <div class="form-grid">
+        <div><label id="t-out-lbl-first">Voornaam *</label><input type="text" id="out-voornaam" onclick="openOSK(this,'out-voornaam')" oninput="syncCapital(this)"/></div>
+        <div><label id="t-out-lbl-last">Achternaam *</label><input type="text" id="out-achternaam" onclick="openOSK(this,'out-achternaam')" oninput="syncCapital(this)"/></div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-primary" id="btn-uitcheck" onclick="uitcheck()">🚪 <span id="t-out-btn">Vertrek Registreren</span></button>
+      </div>
+      <div class="checkout-result" id="checkout-result">
+        <div class="co-icon" id="co-icon"></div>
+        <div class="co-title" id="co-title"></div>
+        <div class="co-sub" id="co-sub"></div>
       </div>
     </div>
   </div>
@@ -523,7 +558,12 @@ const TR={
     adm1:"Voornaam",adm2:"Achternaam",adm3:"Firma",adm4:"Bezoekt",adm5:"Binnenkomst",adm6:"Vertrek",adm7:"Status",adm8:"Taal",
     badgeIn:"Aanwezig",badgeOut:"Vertrokken",btnDepart:"✔ Vertrek",toastDep:"👋 Vertrek geregistreerd!",toastDel:"🗑️ Verwijderd.",
     printedOn:"Afgedrukt op:",countLabel:(a,t)=>`(${a} aanwezig / ${t} totaal)`,
-    toastRetention:d=>`✅ Bewaartermijn: ${d} dagen`,toastError:"⚠️ Vul alle verplichte velden in.",confirmDelete:n=>`Bezoeker "${n}" verwijderen?`},
+    toastRetention:d=>`✅ Bewaartermijn: ${d} dagen`,toastError:"⚠️ Vul alle verplichte velden in.",confirmDelete:n=>`Bezoeker "${n}" verwijderen?`,
+    tabOut:"Uitchecken",outTitle:"Uitchecken",outSub:"Vul uw naam in om uw vertrek te registreren.",
+    outLblFirst:"Voornaam *",outLblLast:"Achternaam *",outBtn:"🚪 Vertrek Registreren",
+    outFound:(n)=>`Tot ziens, ${n}!`,outFoundSub:"Uw vertrek is geregistreerd. Bedankt voor uw bezoek.",
+    outNotFound:"Naam niet gevonden",outNotFoundSub:"Geen actief bezoek gevonden op uw naam. Vraag de receptie om hulp.",
+    outAlreadyOut:"Al uitcheckt",outAlreadyOutSub:"U bent al eerder uitcheckt. Vraag de receptie om hulp."},
   en:{pageTitle:"🏢 Visitor Registration",back:"Back",welcome:"Welcome",welcomeSub:"Register your visit",tap:"TAP THE SCREEN",
     tabReg:"Register",formTitle:"Register New Visitor",privacyTitle:"🔒 Privacy Notice (GDPR)",
     privacyText:"Your personal data are processed on the basis of legitimate interest for access control. Data will be automatically deleted after the retention period.",
@@ -543,7 +583,12 @@ const TR={
     adm1:"First Name",adm2:"Last Name",adm3:"Company",adm4:"Visiting",adm5:"Arrival",adm6:"Departure",adm7:"Status",adm8:"Language",
     badgeIn:"Present",badgeOut:"Departed",btnDepart:"✔ Departure",toastDep:"👋 Departure registered!",toastDel:"🗑️ Deleted.",
     printedOn:"Printed on:",countLabel:(a,t)=>`(${a} present / ${t} total)`,
-    toastRetention:d=>`✅ Retention: ${d} days`,toastError:"⚠️ Please fill in all required fields.",confirmDelete:n=>`Delete visitor "${n}"?`},
+    toastRetention:d=>`✅ Retention: ${d} days`,toastError:"⚠️ Please fill in all required fields.",confirmDelete:n=>`Delete visitor "${n}"?`,
+    tabOut:"Check out",outTitle:"Check Out",outSub:"Enter your name to register your departure.",
+    outLblFirst:"First Name *",outLblLast:"Last Name *",outBtn:"🚪 Register Departure",
+    outFound:(n)=>`Goodbye, ${n}!`,outFoundSub:"Your departure has been registered. Thank you for your visit.",
+    outNotFound:"Name not found",outNotFoundSub:"No active visit found for your name. Please ask reception for help.",
+    outAlreadyOut:"Already checked out",outAlreadyOutSub:"You have already checked out. Please ask reception for help."},
   de:{pageTitle:"🏢 Besucherregistrierung",back:"Zurück",welcome:"Willkommen",welcomeSub:"Registrieren Sie Ihren Besuch",tap:"BILDSCHIRM BERÜHREN",
     tabReg:"Registrieren",formTitle:"Neuen Besucher Registrieren",privacyTitle:"🔒 Datenschutzhinweis (DSGVO)",
     privacyText:"Ihre Daten werden auf Grundlage berechtigten Interesses zur Zugangskontrolle verarbeitet. Daten werden nach der Aufbewahrungsfrist automatisch gelöscht.",
@@ -563,7 +608,12 @@ const TR={
     adm1:"Vorname",adm2:"Nachname",adm3:"Firma",adm4:"Besucht",adm5:"Ankunft",adm6:"Abgang",adm7:"Status",adm8:"Sprache",
     badgeIn:"Anwesend",badgeOut:"Abgereist",btnDepart:"✔ Abgang",toastDep:"👋 Abgang registriert!",toastDel:"🗑️ Gelöscht.",
     printedOn:"Gedruckt am:",countLabel:(a,t)=>`(${a} anwesend / ${t} gesamt)`,
-    toastRetention:d=>`✅ Aufbewahrung: ${d} Tage`,toastError:"⚠️ Bitte alle Pflichtfelder ausfüllen.",confirmDelete:n=>`Besucher "${n}" löschen?`}
+    toastRetention:d=>`✅ Aufbewahrung: ${d} Tage`,toastError:"⚠️ Bitte alle Pflichtfelder ausfüllen.",confirmDelete:n=>`Besucher "${n}" löschen?`,
+    tabOut:"Auschecken",outTitle:"Auschecken",outSub:"Geben Sie Ihren Namen ein, um Ihre Abreise zu registrieren.",
+    outLblFirst:"Vorname *",outLblLast:"Nachname *",outBtn:"🚪 Abreise registrieren",
+    outFound:(n)=>`Auf Wiedersehen, ${n}!`,outFoundSub:"Ihre Abreise wurde registriert. Vielen Dank für Ihren Besuch.",
+    outNotFound:"Name nicht gefunden",outNotFoundSub:"Kein aktiver Besuch für Ihren Namen gefunden. Bitte fragen Sie die Rezeption.",
+    outAlreadyOut:"Bereits ausgecheckt",outAlreadyOutSub:"Sie haben sich bereits ausgecheckt. Bitte fragen Sie die Rezeption."}
 };
 
 // ===== STATE =====
@@ -646,11 +696,81 @@ function renderBHV(){
   renderGroup(safe_items,'✅ Veilig buiten');
 }
 
+// ===== IDLE TIMER (1 minuut) =====
+let idleTimer=null;
+const IDLE_MS=60000;
+function startIdleTimer(){
+  stopIdleTimer();
+  idleTimer=setTimeout(()=>{ naarWelkom(); },IDLE_MS);
+}
+function stopIdleTimer(){
+  if(idleTimer){clearTimeout(idleTimer);idleTimer=null;}
+}
+function resetIdleTimer(){
+  if(idleTimer) startIdleTimer();
+}
+// Reset timer bij elke gebruikersinput op het formulierscherm
+document.addEventListener('DOMContentLoaded',()=>{
+  const form=document.getElementById('screen-form');
+  ['click','touchstart','keydown','input'].forEach(ev=>{
+    form.addEventListener(ev,resetIdleTimer,{passive:true});
+  });
+});
+
 // ===== SCHERMEN =====
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
-function naarFormulier(){showScreen('screen-form');}
-function naarWelkom(){showScreen('screen-welcome');resetFormulier();}
-function adminUit(){showScreen('screen-welcome');}
+function naarFormulier(){showScreen('screen-form');showTab('reg');startIdleTimer();}
+function naarWelkom(){showScreen('screen-welcome');resetFormulier();resetUitcheck();stopIdleTimer();}
+function adminUit(){showScreen('screen-welcome');stopIdleTimer();}
+
+// ===== TABS =====
+function showTab(tab){
+  ['reg','out'].forEach(t=>{
+    document.getElementById('pane-'+t).style.display = t===tab ? 'block' : 'none';
+    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
+  });
+  if(tab==='out') resetUitcheck();
+}
+
+// ===== UITCHECKEN =====
+function uitcheck(){
+  const t=T();
+  const vn=capFirst(document.getElementById('out-voornaam').value.trim());
+  const an=capFirst(document.getElementById('out-achternaam').value.trim());
+  if(!vn||!an){toonToast(t.toastError,'#c0392b');return;}
+  const res=document.getElementById('checkout-result');
+  res.className='checkout-result';
+  // Zoek op naam (case-insensitive)
+  const idx=bezoekers.findIndex(b=>
+    b.voornaam.toLowerCase()===vn.toLowerCase()&&
+    b.achternaam.toLowerCase()===an.toLowerCase()&&
+    !b.vertrek
+  );
+  if(idx>=0){
+    bezoekers[idx].vertrek=nowLocal(); slaOp();
+    document.getElementById('co-icon').textContent='✅';
+    document.getElementById('co-title').textContent=t.outFound(vn);
+    document.getElementById('co-sub').textContent=t.outFoundSub;
+    res.classList.add('found');
+    res.style.display='block';
+    setTimeout(()=>{ naarWelkom(); },4000);
+  } else {
+    // Check of al uitchecked
+    const alUit=bezoekers.some(b=>b.voornaam.toLowerCase()===vn.toLowerCase()&&b.achternaam.toLowerCase()===an.toLowerCase()&&b.vertrek);
+    document.getElementById('co-icon').textContent='❌';
+    document.getElementById('co-title').textContent=alUit?t.outAlreadyOut:t.outNotFound;
+    document.getElementById('co-sub').textContent=alUit?t.outAlreadyOutSub:t.outNotFoundSub;
+    res.classList.add('not-found');
+    res.style.display='block';
+  }
+}
+function resetUitcheck(){
+  document.getElementById('out-voornaam').value='';
+  document.getElementById('out-achternaam').value='';
+  const res=document.getElementById('checkout-result');
+  res.style.display='none';
+  res.className='checkout-result';
+}
 
 // ===== LONG PRESS OP LOGO =====
 function startLongPress(e){
@@ -822,6 +942,7 @@ function applyTranslations(){
   document.getElementById('w-sub').textContent=t.welcomeSub;
   document.getElementById('w-tap').textContent=t.tap;
   document.getElementById('t-tab-reg').textContent=t.tabReg;
+  document.getElementById('t-tab-out').textContent=t.tabOut;
   document.getElementById('t-form-title').textContent=t.formTitle;
   document.getElementById('t-privacy-title').textContent=t.privacyTitle;
   document.getElementById('t-privacy-text').textContent=t.privacyText;
@@ -834,6 +955,12 @@ function applyTranslations(){
   document.getElementById('btn-registreer').textContent=t.btnRegister;
   document.getElementById('s-title').textContent=t.successTitle;
   document.getElementById('s-sub').textContent=t.successSub;
+  // Uitcheck-scherm
+  document.getElementById('t-out-title').textContent=t.outTitle;
+  document.getElementById('t-out-sub').textContent=t.outSub;
+  document.getElementById('t-out-lbl-first').textContent=t.outLblFirst;
+  document.getElementById('t-out-lbl-last').textContent=t.outLblLast;
+  document.getElementById('t-out-btn').textContent=t.outBtn;
 }
 function applyAdminTranslations(){
   const t=T();

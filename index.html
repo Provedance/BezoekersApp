@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Bezoekersregistratie – Mobacc</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',sans-serif;background:#f2f2f2;color:#222;-webkit-user-select:none;user-select:none;overflow:hidden;height:100vh;}
+.screen{position:fixed;inset:0;display:none;flex-direction:column;}
+.screen.active{display:flex;}
+
+/* ===== WELKOM ===== */
+#screen-welcome{background:#efefef;align-items:center;justify-content:center;cursor:pointer;}
+.welcome-logo{margin-bottom:28px;animation:pulse 2.5s infinite;}
+.welcome-logo svg{filter:drop-shadow(0 2px 8px rgba(0,0,0,.10));}
+@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.04);}}
+.welcome-title{color:#333;font-size:2.8rem;font-weight:800;letter-spacing:2px;text-align:center;margin-bottom:12px;}
+.welcome-sub{color:#777;font-size:1.1rem;text-align:center;margin-bottom:36px;}
+.tap-indicator{color:#c0392b;font-size:1.4rem;font-weight:700;letter-spacing:4px;text-transform:uppercase;border:3px solid #c0392b;border-radius:50px;padding:20px 48px;animation:tapblink 1.6s ease-in-out infinite;margin-bottom:28px;}
+.bhv-btn{display:inline-flex;align-items:center;gap:10px;background:rgba(192,57,43,.12);border:2px solid rgba(192,57,43,.4);color:#c0392b;border-radius:10px;padding:11px 24px;cursor:pointer;font-family:inherit;font-size:.88rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;transition:all .25s;white-space:nowrap;}
+.bhv-btn:hover{background:rgba(192,57,43,.2);border-color:#c0392b;}
+.bhv-btn .bhv-icon{width:30px;height:30px;background:#c0392b;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0;animation:bhvring 2.5s ease-in-out infinite;}
+@keyframes tapblink{0%,100%{opacity:1;}50%{opacity:.4;}}
+.welcome-clock{position:absolute;bottom:28px;color:#999;font-size:1rem;letter-spacing:1px;}
+.welcome-lang{position:absolute;top:24px;right:24px;display:flex;gap:8px;}
+.wlang-btn{background:rgba(0,0,0,.07);border:2px solid rgba(0,0,0,.15);color:#555;border-radius:6px;padding:8px 16px;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .2s;}
+.wlang-btn.active{background:#c0392b;color:white;border-color:#c0392b;}
+
+/* Logo long-press ring */
+.logo-wrap{position:relative;display:inline-block;cursor:pointer;}
+.logo-ring{position:absolute;inset:-8px;border-radius:50%;border:4px solid transparent;transition:none;pointer-events:none;}
+.logo-ring.pressing{border-color:#c0392b;animation:ringfill 5s linear forwards;}
+@keyframes ringfill{0%{clip-path:inset(0 100% 0 0);}100%{clip-path:inset(0 0% 0 0);}}
+
+
+/* ===== PIN SCHERM ===== */
+#screen-pin{background:#efefef;align-items:center;justify-content:center;}
+.pin-card{background:white;border-radius:14px;box-shadow:0 4px 24px rgba(0,0,0,.13);padding:36px 40px;width:360px;text-align:center;border-top:4px solid #c0392b;}
+.pin-card h2{color:#8b1a1a;font-size:1.3rem;margin-bottom:6px;}
+.pin-card p{color:#888;font-size:.88rem;margin-bottom:24px;}
+.pin-display{display:flex;gap:12px;justify-content:center;margin-bottom:24px;}
+.pin-dot{width:18px;height:18px;border-radius:50%;border:2px solid #c0392b;background:transparent;transition:background .15s;}
+.pin-dot.filled{background:#c0392b;}
+.pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+.pin-key{background:#f5f5f5;border:none;border-radius:10px;height:64px;font-size:1.4rem;font-weight:700;color:#333;cursor:pointer;transition:background .15s;}
+.pin-key:active{background:#e0e0e0;}
+.pin-key.del{background:#fdf2f2;color:#c0392b;font-size:1rem;}
+.pin-key.wide{grid-column:span 3;height:52px;font-size:.95rem;background:#f0f0f0;color:#555;}
+.pin-error{color:#c0392b;font-size:.85rem;min-height:20px;margin-bottom:8px;}
+.pin-back{margin-top:12px;background:transparent;border:none;color:#aaa;font-size:.85rem;cursor:pointer;text-decoration:underline;}
+
+/* ===== ADMIN PANEEL ===== */
+#screen-admin{background:#f2f2f2;overflow-y:auto;}
+.admin-header{background:linear-gradient(135deg,#4a4a4a,#2e2e2e);color:white;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:8px;box-shadow:0 4px 12px rgba(0,0,0,.25);flex-shrink:0;}
+.admin-header h1{font-size:1.2rem;font-weight:700;display:flex;align-items:center;gap:8px;}
+.admin-tabs{display:flex;gap:0;background:#2e2e2e;flex-shrink:0;}
+.admin-tab{flex:1;padding:13px;color:rgba(255,255,255,.6);font-size:.88rem;font-weight:600;border:none;background:transparent;cursor:pointer;transition:all .2s;border-bottom:3px solid transparent;}
+.admin-tab.active{color:white;border-bottom:3px solid #c0392b;background:rgba(255,255,255,.08);}
+
+/* ===== FORMULIERSCHERM ===== */
+#screen-form{background:#f2f2f2;overflow-y:auto;}
+header{background:#efefef;color:#333;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;box-shadow:0 2px 8px rgba(0,0,0,.1);flex-shrink:0;}
+header h1{font-size:1.3rem;font-weight:700;color:#333;}
+.back-btn{background:transparent;border:2px solid #c0392b;color:#c0392b;border-radius:6px;padding:7px 16px;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .2s;}
+.back-btn:hover{background:#c0392b;color:white;}
+.tab-bar{display:flex;background:#ddd;flex-shrink:0;}
+.tab-btn{flex:1;padding:13px;color:#666;font-size:.88rem;font-weight:600;border:none;background:transparent;cursor:pointer;border-bottom:3px solid transparent;}
+.tab-btn.active{color:#8b1a1a;border-bottom:3px solid #c0392b;background:rgba(192,57,43,.07);}
+
+.container{max-width:960px;margin:20px auto;padding:0 14px 40px;}
+.card{background:white;border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,.09);padding:22px;margin-bottom:18px;border-top:3px solid #c0392b;}
+.card h2{font-size:1.05rem;color:#8b1a1a;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.card h2::before{content:'';display:inline-block;width:4px;height:20px;background:#c0392b;border-radius:4px;}
+.admin-card{background:white;border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,.09);padding:22px;margin-bottom:18px;border-top:3px solid #4a4a4a;}
+.admin-card h2{font-size:1.05rem;color:#2e2e2e;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.admin-card h2::before{content:'';display:inline-block;width:4px;height:20px;background:#4a4a4a;border-radius:4px;}
+
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+label{display:block;font-size:.78rem;font-weight:600;color:#555;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px;}
+input[type=text]{text-transform:capitalize;}
+input[type=text],input[type=datetime-local],input[type=password],select{width:100%;padding:12px 14px;border:2px solid #ddd;border-radius:6px;font-size:1rem;background:#fafafa;cursor:pointer;transition:border .2s;}
+input:focus,select:focus{outline:none;border-color:#c0392b;background:white;}
+.privacy-notice{background:#fdf2f2;border:1.5px solid #e8b4b4;border-radius:8px;padding:12px 16px;margin-bottom:14px;font-size:.85rem;color:#6b2020;line-height:1.6;}
+.privacy-notice strong{display:block;margin-bottom:3px;}
+.checkbox-row{display:flex;align-items:flex-start;gap:10px;background:#f9f9f9;border:1.5px solid #ccc;border-radius:8px;padding:14px;margin-top:12px;}
+.checkbox-row input[type=checkbox]{margin-top:2px;width:24px;height:24px;cursor:pointer;flex-shrink:0;accent-color:#c0392b;}
+.checkbox-row label{text-transform:none;font-size:.9rem;color:#444;font-weight:500;letter-spacing:0;margin:0;cursor:pointer;}
+.btn{padding:13px 22px;border:none;border-radius:6px;font-size:.92rem;font-weight:600;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:8px;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn-primary{background:#c0392b;color:white;}
+.btn-primary:hover:not(:disabled){background:#8b1a1a;}
+.btn-secondary{background:#4a4a4a;color:white;}
+.btn-secondary:hover{background:#2e2e2e;}
+.btn-success{background:#4a4a4a;color:white;padding:8px 14px;font-size:.82rem;}
+.btn-danger{background:transparent;border:1.5px solid #c0392b;color:#c0392b;padding:8px 14px;font-size:.82rem;}
+.btn-danger:hover{background:#fdf2f2;}
+.btn-print{background:#6b6b6b;color:white;}
+.actions{display:flex;gap:12px;margin-top:16px;align-items:center;flex-wrap:wrap;}
+.retention-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:1.5px solid #ddd;border-left:4px solid #c0392b;border-radius:8px;padding:11px 16px;font-size:.88rem;color:#444;margin-bottom:18px;}
+.retention-bar label{text-transform:none;letter-spacing:0;margin:0;}
+.retention-bar select{width:auto;padding:5px 10px;font-size:.88rem;border:1.5px solid #ddd;border-radius:6px;}
+
+table{width:100%;border-collapse:collapse;font-size:.87rem;}
+thead tr{background:#8b1a1a;color:white;}
+.admin-table thead tr{background:#2e2e2e;}
+th{padding:11px 12px;text-align:left;font-size:.76rem;text-transform:uppercase;letter-spacing:.4px;}
+td{padding:11px 12px;border-bottom:1px solid #eee;vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tbody tr:nth-child(even){background:#fafafa;}
+tbody tr:hover{background:#fdf2f2;}
+.badge{display:inline-block;padding:4px 12px;border-radius:999px;font-size:.75rem;font-weight:600;}
+.badge-in{background:#c0392b;color:white;}
+.badge-out{background:#ddd;color:#555;}
+.empty{text-align:center;padding:40px;color:#aaa;font-size:.95rem;}
+.count{margin-left:auto;font-size:.83rem;color:#888;}
+
+/* Bevestiging modal */
+#confirm-modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:5000;display:none;align-items:center;justify-content:center;}
+#confirm-modal.open{display:flex;}
+.confirm-box{background:white;border-radius:12px;padding:32px 28px;max-width:360px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.2);}
+.confirm-box h3{font-size:1.1rem;color:#2e2e2e;margin-bottom:10px;}
+.confirm-box p{font-size:.9rem;color:#666;margin-bottom:24px;line-height:1.5;}
+.confirm-actions{display:flex;gap:10px;justify-content:center;}
+
+/* stat blokken */
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px;}
+.stat-box{background:white;border-radius:10px;padding:20px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,.07);}
+.stat-num{font-size:2rem;font-weight:800;color:#c0392b;}
+.stat-lbl{font-size:.82rem;color:#888;margin-top:4px;}
+
+/* PIN wijzigen */
+.pin-change-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;}
+.pin-change-row .field{flex:1;min-width:140px;}
+
+.toast{position:fixed;bottom:24px;right:24px;color:white;padding:12px 20px;border-radius:6px;font-size:.9rem;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.2);opacity:0;transition:opacity .3s;pointer-events:none;z-index:9999;}
+.toast.show{opacity:1;}
+
+/* SUCCES */
+#screen-success{background:#efefef;align-items:center;justify-content:center;z-index:500;}
+.success-icon{font-size:5rem;margin-bottom:24px;animation:popIn .4s ease-out;}
+@keyframes popIn{0%{transform:scale(0);}80%{transform:scale(1.1);}100%{transform:scale(1);}}
+.success-title{color:#2e2e2e;font-size:2.2rem;font-weight:800;margin-bottom:12px;text-align:center;}
+.success-sub{color:#888;font-size:1.1rem;text-align:center;}
+
+/* OSK */
+#osk-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;display:none;align-items:flex-end;justify-content:center;}
+#osk-overlay.open{display:flex;}
+#osk-box{background:#1e1e1e;border-radius:16px 16px 0 0;width:100%;max-width:860px;padding:10px 10px 18px;}
+#osk-label{color:#aaa;font-size:.76rem;text-align:center;margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase;}
+#osk-display{background:#2a2a2a;border:2px solid #c0392b;border-radius:8px;color:white;font-size:1.2rem;padding:10px 14px;margin:0 4px 8px;min-height:46px;display:flex;align-items:center;}
+#osk-display span{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#osk-display .cursor{width:2px;height:1.2em;background:#c0392b;animation:blink .8s infinite;flex-shrink:0;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+.osk-row{display:flex;gap:4px;justify-content:center;margin-bottom:4px;}
+.osk-key{background:#3a3a3a;color:white;border:none;border-radius:7px;height:52px;font-size:1rem;font-weight:500;cursor:pointer;flex:1;max-width:72px;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;}
+.osk-key:active{background:#555;transform:scale(.92);}
+.osk-key.wide{max-width:100px;flex:1.5;}
+.osk-key.space{max-width:340px;flex:5;background:#2e2e2e;}
+.osk-key.action{background:#c0392b;font-weight:700;}
+.osk-key.shift-on{background:#c0392b;}
+.osk-key.dark{background:#2a2a2a;font-size:.82rem;}
+.osk-key.nums{background:#555;}
+.osk-actions{display:flex;gap:8px;margin-top:8px;justify-content:flex-end;padding:0 4px;}
+
+/* BHV SCHERM */
+@keyframes bhvglow{0%,100%{box-shadow:0 8px 32px rgba(192,57,43,.6);}50%{box-shadow:0 8px 48px rgba(192,57,43,.9),0 0 60px rgba(192,57,43,.4);}}
+@keyframes bhvring{0%,100%{box-shadow:0 0 20px rgba(192,57,43,.7);}50%{box-shadow:0 0 36px rgba(192,57,43,1),0 0 60px rgba(192,57,43,.5);}}
+.bhv-section-lbl{color:#555;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;padding:12px 4px 6px;}
+.bhv-card{margin-bottom:8px;}
+.bhv-row{display:flex;align-items:center;gap:14px;background:#1c1c1c;border:1.5px solid #2a2a2a;border-radius:12px;padding:14px 16px;cursor:pointer;transition:background .2s,border-color .2s;-webkit-tap-highlight-color:transparent;}
+.bhv-row:active{background:#252525;}
+.bhv-row.checked{background:#0d2b1a;border-color:#1a5c35;}
+.bhv-check{width:32px;height:32px;border-radius:50%;border:2.5px solid #333;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:900;color:#2ecc71;flex-shrink:0;transition:all .2s;}
+.bhv-row.checked .bhv-check{background:#1a5c35;border-color:#2ecc71;}
+.bhv-avatar{width:44px;height:44px;border-radius:50%;background:#2a2a2a;color:#aaa;font-size:1rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.bhv-row.checked .bhv-avatar{background:#1a5c35;color:#2ecc71;}
+.bhv-info{flex:1;min-width:0;}
+.bhv-name{color:white;font-size:1rem;font-weight:700;margin-bottom:3px;}
+.bhv-row.checked .bhv-name{color:#2ecc71;}
+.bhv-detail{display:flex;gap:14px;flex-wrap:wrap;}
+.bhv-detail span{color:#555;font-size:.78rem;}
+.bhv-row.checked .bhv-detail span{color:#27ae60;}
+.bhv-time{color:#444;font-size:.8rem;font-weight:600;flex-shrink:0;}
+.bhv-row.checked .bhv-time{color:#27ae60;}
+
+@media print{
+  #screen-welcome,#screen-pin,#screen-success,#screen-admin,#screen-form header,.actions,.retention-bar,#osk-overlay,.tab-bar,.tab-btn,.back-btn,.btn-print,.btn-danger,.btn-success{display:none!important;}
+  .card{box-shadow:none;border:none;padding:0;}
+  h2::before{display:none!important;}
+  .print-header{display:block!important;}
+}
+.print-header{display:none;text-align:center;margin-bottom:16px;}
+.print-header h2{font-size:16pt;margin-bottom:4px;}
+.print-header p{font-size:10pt;color:#555;}
+</style>
+</head>
+<body>
+
+<!-- WELKOMSTSCHERM -->
+<div id="screen-welcome" class="screen active">
+  <div class="welcome-lang" onclick="event.stopPropagation()">
+    <button class="wlang-btn active" onclick="setLang('nl',event)">🇳🇱 NL</button>
+    <button class="wlang-btn" onclick="setLang('en',event)">🇬🇧 EN</button>
+    <button class="wlang-btn" onclick="setLang('de',event)">🇩🇪 DE</button>
+  </div>
+
+  <div class="logo-wrap" id="logo-wrap"
+    onmousedown="startLongPress(event)" ontouchstart="startLongPress(event)"
+    onmouseup="cancelLongPress()" ontouchend="cancelLongPress()"
+    onmouseleave="cancelLongPress()">
+    <div class="welcome-logo">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 100" width="380" height="90">
+        <rect x="0"  y="18" width="22" height="72" rx="5" fill="#e84040"/>
+        <rect x="28" y="0"  width="22" height="90" rx="5" fill="#e84040"/>
+        <rect x="56" y="18" width="22" height="72" rx="5" fill="#e84040"/>
+        <rect x="84" y="0"  width="22" height="90" rx="5" fill="#e84040"/>
+        <text x="120" y="63" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="52" fill="#6b6b6b" letter-spacing="1">Mobacc</text>
+        <text x="123" y="84" font-family="Arial,sans-serif" font-size="12.5" fill="#9a9a9a" letter-spacing="4">AEROSOL TECHNOLOGIES</text>
+      </svg>
+    </div>
+    <div class="logo-ring" id="logo-ring"></div>
+
+  </div>
+
+  <div class="welcome-title" id="w-title">Welkom</div>
+  <div class="welcome-sub" id="w-sub">Registreer uw bezoek</div>
+  <div class="tap-indicator" id="w-tap" onclick="naarFormulier()">TIK OP HET SCHERM</div>
+  <button class="bhv-btn" onclick="openBHV(event)">
+    <span class="bhv-icon">🚨</span>
+    BHV / ONTRUIMING
+  </button>
+
+  <div class="welcome-clock" id="welcome-clock"></div>
+</div>
+
+<!-- PIN SCHERM -->
+<div id="screen-pin" class="screen">
+  <div class="pin-card">
+    <h2>🔐 <span id="pin-title">Beheerder toegang</span></h2>
+    <p id="pin-sub">Voer uw PIN-code in</p>
+    <div class="pin-display">
+      <div class="pin-dot" id="pd0"></div>
+      <div class="pin-dot" id="pd1"></div>
+      <div class="pin-dot" id="pd2"></div>
+      <div class="pin-dot" id="pd3"></div>
+    </div>
+    <div class="pin-error" id="pin-error"></div>
+    <div class="pin-grid">
+      <button class="pin-key" onclick="pinPress('1')">1</button>
+      <button class="pin-key" onclick="pinPress('2')">2</button>
+      <button class="pin-key" onclick="pinPress('3')">3</button>
+      <button class="pin-key" onclick="pinPress('4')">4</button>
+      <button class="pin-key" onclick="pinPress('5')">5</button>
+      <button class="pin-key" onclick="pinPress('6')">6</button>
+      <button class="pin-key" onclick="pinPress('7')">7</button>
+      <button class="pin-key" onclick="pinPress('8')">8</button>
+      <button class="pin-key" onclick="pinPress('9')">9</button>
+      <button class="pin-key del" onclick="pinDel()">⌫</button>
+      <button class="pin-key" onclick="pinPress('0')">0</button>
+      <button class="pin-key del" onclick="pinClear()">✕</button>
+    </div>
+    <button class="pin-back" onclick="showScreen('screen-welcome')">← Terug</button>
+  </div>
+</div>
+
+<!-- ADMIN PANEEL -->
+<div id="screen-admin" class="screen">
+  <div class="admin-header">
+    <h1>⚙️ <span id="adm-title">Beheer – Mobacc Bezoekersregistratie</span></h1>
+    <button class="back-btn" onclick="adminUit()">🔒 <span id="adm-logout">Uitloggen</span></button>
+  </div>
+  <div class="admin-tabs">
+    <button class="admin-tab active" id="adm-tab-overzicht" onclick="admTab('overzicht')">📋 <span id="adm-t1">Overzicht</span></button>
+    <button class="admin-tab" id="adm-tab-instellingen" onclick="admTab('instellingen')">⚙️ <span id="adm-t2">Instellingen</span></button>
+  </div>
+
+  <!-- Overzicht -->
+  <div id="adm-pane-overzicht" class="container">
+    <div class="stat-grid">
+      <div class="stat-box"><div class="stat-num" id="stat-aanwezig">0</div><div class="stat-lbl" id="stat-lbl1">Aanwezig</div></div>
+      <div class="stat-box"><div class="stat-num" id="stat-vandaag">0</div><div class="stat-lbl" id="stat-lbl2">Bezoeken vandaag</div></div>
+      <div class="stat-box"><div class="stat-num" id="stat-totaal">0</div><div class="stat-lbl" id="stat-lbl3">Totaal opgeslagen</div></div>
+    </div>
+    <div class="admin-card">
+      <h2 id="adm-table-title">Alle Bezoekers</h2>
+      <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+        <button class="btn btn-print" onclick="window.print()">🖨️ <span id="adm-print">Afdrukken</span></button>
+        <button class="btn btn-danger" onclick="allesVerwijderen()">🗑 <span id="adm-delall">Alles wissen</span></button>
+      </div>
+      <div class="print-header"><h2>Bezoekersregistratie – Mobacc</h2><p id="adm-print-date"></p></div>
+      <div class="empty" id="adm-empty">📋 Geen bezoekers.</div>
+      <table id="adm-table" class="admin-table" style="display:none">
+        <thead><tr>
+          <th>#</th><th id="adm-th1">Voornaam</th><th id="adm-th2">Achternaam</th>
+          <th id="adm-th3">Firma</th><th id="adm-th4">Bezoekt</th>
+          <th id="adm-th5">Binnenkomst</th><th id="adm-th6">Vertrek</th>
+          <th id="adm-th7">Status</th><th id="adm-th8">Taal</th><th>Actie</th>
+        </tr></thead>
+        <tbody id="adm-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Instellingen -->
+  <div id="adm-pane-instellingen" class="container" style="display:none">
+    <div class="admin-card">
+      <h2 id="adm-set-ret">🔒 AVG Bewaartermijn</h2>
+      <div class="retention-bar" style="border-left-color:#4a4a4a">
+        <label id="adm-ret-lbl">Verwijder bezoekers automatisch na:</label>
+        <select id="adm-termijn" onchange="slaTermijnOp()">
+          <option value="7">7</option><option value="14">14</option>
+          <option value="30" selected>30</option><option value="60">60</option><option value="90">90</option>
+        </select>
+        <span id="adm-days-unit" style="font-weight:600">dagen</span>
+      </div>
+    </div>
+    <div class="admin-card">
+      <h2 id="adm-set-pin">🔐 PIN-code wijzigen</h2>
+      <div class="pin-change-row">
+        <div class="field"><label id="adm-pin-cur-lbl">Huidige PIN</label><input type="password" id="pin-cur" maxlength="4" placeholder="••••"/></div>
+        <div class="field"><label id="adm-pin-new-lbl">Nieuwe PIN (4 cijfers)</label><input type="password" id="pin-new" maxlength="4" placeholder="••••"/></div>
+        <div class="field"><label id="adm-pin-rep-lbl">Herhaal nieuwe PIN</label><input type="password" id="pin-rep" maxlength="4" placeholder="••••"/></div>
+        <button class="btn btn-secondary" onclick="wijzigPin()" style="flex-shrink:0;height:48px;align-self:flex-end">💾 <span id="adm-pin-save">Opslaan</span></button>
+      </div>
+      <div id="pin-change-msg" style="margin-top:10px;font-size:.88rem;min-height:20px;"></div>
+    </div>
+    <div class="admin-card">
+      <h2 id="adm-set-export">📤 Data Export</h2>
+      <p style="font-size:.88rem;color:#666;margin-bottom:14px" id="adm-export-sub">Download alle bezoekersdata als CSV bestand.</p>
+      <button class="btn btn-secondary" onclick="exportCSV()">⬇️ <span id="adm-export-btn">Download CSV</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- FORMULIERSCHERM (bezoeker) -->
+<div id="screen-form" class="screen">
+  <header>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 100" width="210" height="50">
+      <rect x="0"  y="18" width="22" height="72" rx="5" fill="#e84040"/>
+      <rect x="28" y="0"  width="22" height="90" rx="5" fill="#e84040"/>
+      <rect x="56" y="18" width="22" height="72" rx="5" fill="#e84040"/>
+      <rect x="84" y="0"  width="22" height="90" rx="5" fill="#e84040"/>
+      <text x="120" y="63" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="52" fill="#6b6b6b" letter-spacing="1">Mobacc</text>
+      <text x="123" y="84" font-family="Arial,sans-serif" font-size="12.5" fill="#9a9a9a" letter-spacing="4">AEROSOL TECHNOLOGIES</text>
+    </svg>
+    <button class="back-btn" onclick="naarWelkom()">← <span id="t-back">Terug</span></button>
+  </header>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tab-reg" onclick="showTab('reg')">📝 <span id="t-tab-reg">Registreren</span></button>
+  </div>
+  <div id="pane-reg" class="container">
+    <div class="card">
+      <h2 id="t-form-title">Nieuwe Bezoeker Registreren</h2>
+      <div class="privacy-notice">
+        <strong id="t-privacy-title">🔒 Privacymelding (AVG/GDPR)</strong>
+        <span id="t-privacy-text">Uw persoonsgegevens worden verwerkt op basis van gerechtvaardigd belang voor toegangscontrole. Gegevens worden automatisch verwijderd na de bewaartermijn.</span>
+      </div>
+      <div class="form-grid">
+        <div><label id="t-lbl-first">Voornaam *</label><input type="text" id="voornaam" onclick="openOSK(this,'voornaam')" oninput="syncCapital(this)"/></div>
+        <div><label id="t-lbl-last">Achternaam *</label><input type="text" id="achternaam" onclick="openOSK(this,'achternaam')" oninput="syncCapital(this)"/></div>
+      </div>
+      <div style="height:12px"></div>
+      <div class="form-grid">
+        <div><label id="t-lbl-company">Firmanaam</label><input type="text" id="firma" onclick="openOSK(this,'firma')" oninput="syncCapital(this)"/></div>
+        <div><label id="t-lbl-visiting">Bezoekt *</label><input type="text" id="bezoekt" onclick="openOSK(this,'bezoekt')" oninput="syncCapital(this)"/></div>
+      </div>
+      <div style="height:12px"></div>
+      <div class="form-grid">
+        <div><label id="t-lbl-arrival">Tijdstip Binnenkomst</label><input type="datetime-local" id="binnenkomst"/></div>
+        <div></div>
+      </div>
+      <div class="checkbox-row">
+        <input type="checkbox" id="akkoord" onchange="checkAkkoord()"/>
+        <label for="akkoord" id="t-consent-text">Ik heb de privacymelding gelezen en ga akkoord.</label>
+      </div>
+      <div class="actions">
+        <button class="btn btn-primary" id="btn-registreer" onclick="registreer()" disabled></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BHV ONTRUIMING -->
+<div id="screen-bhv" class="screen" style="background:#111;color:white;overflow-y:auto;">
+
+  <div style="background:#7b1a1a;padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0;border-bottom:4px solid #c0392b;">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div style="width:52px;height:52px;flex-shrink:0;background:#c0392b;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;box-shadow:0 0 20px rgba(192,57,43,.7);animation:bhvring 2.5s ease-in-out infinite;">🚨</div>
+      <div>
+        <h1 style="color:white;font-size:1.4rem;font-weight:900;letter-spacing:.5px;margin:0 0 3px 0;">BHV ONTRUIMINGSLIJST</h1>
+        <p style="color:rgba(255,255,255,.6);font-size:.8rem;margin:0;">Vink af wie u buiten heeft gezien</p>
+      </div>
+    </div>
+    <button onclick="closeBHV()" style="background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.3);color:white;border-radius:8px;padding:10px 20px;font-size:.9rem;font-weight:700;cursor:pointer;font-family:inherit;">✕ Sluiten</button>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:16px;flex-shrink:0;">
+    <div style="background:#1c1c1c;border:1.5px solid #2a2a2a;border-radius:12px;padding:16px;text-align:center;">
+      <span id="bhv-total" style="display:block;font-size:2.4rem;font-weight:900;color:#ccc;line-height:1;">0</span>
+      <span style="display:block;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#666;margin-top:6px;">Aanwezig</span>
+    </div>
+    <div style="background:#0d2b1a;border:1.5px solid #1a5c35;border-radius:12px;padding:16px;text-align:center;">
+      <span id="bhv-safe" style="display:block;font-size:2.4rem;font-weight:900;color:#2ecc71;line-height:1;">0</span>
+      <span style="display:block;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#27ae60;margin-top:6px;">Veilig buiten</span>
+    </div>
+    <div style="background:#2b0d0d;border:1.5px solid #5c1a1a;border-radius:12px;padding:16px;text-align:center;">
+      <span id="bhv-missing" style="display:block;font-size:2.4rem;font-weight:900;color:#e74c3c;line-height:1;">0</span>
+      <span style="display:block;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#c0392b;margin-top:6px;">Niet gezien</span>
+    </div>
+  </div>
+
+  <div style="padding:4px 16px 14px;flex-shrink:0;">
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+      <span style="color:#444;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;">Voortgang evacuatie</span>
+      <span id="bhv-pct" style="color:#888;font-size:.78rem;font-weight:700;">0%</span>
+    </div>
+    <div style="height:12px;background:#1c1c1c;border-radius:999px;border:1px solid #2a2a2a;overflow:hidden;">
+      <div id="bhv-bar" style="height:100%;background:linear-gradient(90deg,#1a5c35,#2ecc71);border-radius:999px;width:0%;transition:width .5s ease;"></div>
+    </div>
+  </div>
+
+  <div style="padding:0 14px 40px;max-width:860px;margin:0 auto;background:#111;">
+    <div style="display:none;background:#0d2b1a;border:2px solid #27ae60;border-radius:14px;padding:28px;text-align:center;margin-bottom:16px;" id="bhv-all-safe">
+      <div style="font-size:3rem;margin-bottom:10px;">✅</div>
+      <h2 style="color:#2ecc71;font-size:1.4rem;font-weight:800;margin:0 0 6px 0;">Iedereen veilig buiten!</h2>
+      <p style="color:rgba(255,255,255,.6);font-size:.88rem;margin:0;">Alle geregistreerde bezoekers zijn afgevinkt.</p>
+    </div>
+    <div id="bhv-list"></div>
+    <div id="bhv-empty" style="display:none;text-align:center;padding:50px;color:#444;font-size:.95rem;">Geen bezoekers aanwezig.</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px;">
+      <button onclick="window.print()" style="padding:13px 22px;border:none;border-radius:10px;font-size:.9rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;background:#b7600a;color:white;font-family:inherit;">🖨️ Afdrukken</button>
+      <button onclick="resetBHV()" style="padding:13px 22px;border:1.5px solid #2a2a2a;border-radius:10px;font-size:.9rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;background:#1c1c1c;color:#888;font-family:inherit;">↺ Reset afvinklijst</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- SUCCES -->
+<div id="screen-success" class="screen">
+  <div class="success-icon">✅</div>
+  <div class="success-title" id="s-title">Geregistreerd!</div>
+  <div class="success-sub" id="s-sub">U wordt teruggeleid naar het beginscherm...</div>
+</div>
+
+<!-- OSK -->
+<div id="osk-overlay" onclick="closeOnOverlay(event)">
+  <div id="osk-box">
+    <div id="osk-label">VELD</div>
+    <div id="osk-display"><span id="osk-text-display"></span><div class="cursor"></div></div>
+    <div class="osk-row" id="row1"></div>
+    <div class="osk-row" id="row2"></div>
+    <div class="osk-row" id="row3"></div>
+    <div class="osk-row" id="row4"></div>
+    <div class="osk-actions">
+      <button class="btn btn-danger" style="padding:10px 20px" onclick="closeOSK()">✕ <span id="osk-cancel-btn">Annuleren</span></button>
+      <button class="btn btn-primary" style="padding:10px 20px" onclick="confirmOSK()">✔ <span id="osk-ok-btn">OK</span></button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- BEVESTIGING MODAL -->
+<div id="confirm-modal">
+  <div class="confirm-box">
+    <h3 id="cm-title">⚠️ Weet u het zeker?</h3>
+    <p id="cm-msg"></p>
+    <div class="confirm-actions">
+      <button class="btn btn-danger" id="cm-cancel" onclick="closeConfirm()">Annuleren</button>
+      <button class="btn btn-secondary" id="cm-ok" onclick="confirmOk()">Ja, verwijderen</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== VERTALINGEN =====
+const TR={
+  nl:{pageTitle:"🏢 Bezoekersregistratie",back:"Terug",welcome:"Welkom",welcomeSub:"Registreer uw bezoek",tap:"TIK OP HET SCHERM",
+    tabReg:"Registreren",formTitle:"Nieuwe Bezoeker Registreren",privacyTitle:"🔒 Privacymelding (AVG/GDPR)",
+    privacyText:"Uw persoonsgegevens worden verwerkt op basis van gerechtvaardigd belang voor toegangscontrole. Gegevens worden automatisch verwijderd na de bewaartermijn.",
+    lblFirst:"Voornaam *",lblLast:"Achternaam *",    lblCompany:"Firma naam",lblVisiting:"Bezoekt *",lblArrival:"Tijdstip Binnenkomst",
+    consentText:"Ik heb de privacymelding gelezen en ga akkoord met de verwerking van mijn persoonsgegevens.",
+    btnRegister:"➕ Bezoeker Registreren",successTitle:"Geregistreerd!",successSub:"U wordt teruggeleid naar het beginscherm...",
+    oskCancel:"Annuleren",oskOk:"OK",daysUnit:"dagen",
+    pinTitle:"Beheerder toegang",pinSub:"Voer uw PIN-code in",pinErr:"Onjuiste PIN. Probeer opnieuw.",
+    admTitle:"Beheer – Mobacc Bezoekersregistratie",admLogout:"Uitloggen",
+    admt1:"Overzicht",admt2:"Instellingen",admTableTitle:"Alle Bezoekers",
+    admPrint:"Afdrukken",admDelAll:"Alles wissen",admDelConfirm:"Alle bezoekersdata verwijderen?",
+    statLbl1:"Aanwezig",statLbl2:"Bezoeken vandaag",statLbl3:"Totaal opgeslagen",
+    admSetRet:"🔒 AVG Bewaartermijn",admRetLbl:"Verwijder bezoekers automatisch na:",
+    admSetPin:"🔐 PIN-code wijzigen",admPinCur:"Huidige PIN",admPinNew:"Nieuwe PIN (4 cijfers)",admPinRep:"Herhaal nieuwe PIN",admPinSave:"Opslaan",    pinChangedOk:"✅ PIN succesvol gewijzigd!",pinChangedErr:"❌ Controleer de huidige PIN en of de nieuwe PINs overeenkomen.",
+    admSetExport:"📤 Data Export",admExportSub:"Download alle bezoekersdata als CSV bestand.",admExportBtn:"Download CSV",
+    adm1:"Voornaam",adm2:"Achternaam",adm3:"Firma",adm4:"Bezoekt",adm5:"Binnenkomst",adm6:"Vertrek",adm7:"Status",adm8:"Taal",
+    badgeIn:"Aanwezig",badgeOut:"Vertrokken",btnDepart:"✔ Vertrek",toastDep:"👋 Vertrek geregistreerd!",toastDel:"🗑️ Verwijderd.",
+    printedOn:"Afgedrukt op:",countLabel:(a,t)=>`(${a} aanwezig / ${t} totaal)`,
+    toastRetention:d=>`✅ Bewaartermijn: ${d} dagen`,toastError:"⚠️ Vul alle verplichte velden in.",confirmDelete:n=>`Bezoeker "${n}" verwijderen?`},
+  en:{pageTitle:"🏢 Visitor Registration",back:"Back",welcome:"Welcome",welcomeSub:"Register your visit",tap:"TAP THE SCREEN",
+    tabReg:"Register",formTitle:"Register New Visitor",privacyTitle:"🔒 Privacy Notice (GDPR)",
+    privacyText:"Your personal data are processed on the basis of legitimate interest for access control. Data will be automatically deleted after the retention period.",
+    lblFirst:"First Name *",lblLast:"Last Name *",lblCompany:"Company",lblVisiting:"Visiting *",lblArrival:"Arrival Time",
+    consentText:"I have read the privacy notice and agree to the processing of my personal data.",
+    btnRegister:"➕ Register Visitor",successTitle:"Registered!",successSub:"Returning to the home screen...",
+    oskCancel:"Cancel",oskOk:"OK",daysUnit:"days",
+    pinTitle:"Administrator access",pinSub:"Enter your PIN code",pinErr:"Incorrect PIN. Please try again.",
+    admTitle:"Admin – Mobacc Visitor Registration",admLogout:"Log out",
+    admt1:"Overview",admt2:"Settings",admTableTitle:"All Visitors",
+    admPrint:"Print",admDelAll:"Clear all",admDelConfirm:"Delete all visitor data?",
+    statLbl1:"Present",statLbl2:"Visits today",statLbl3:"Total stored",
+    admSetRet:"🔒 GDPR Retention Period",admRetLbl:"Automatically delete visitors after:",
+    admSetPin:"🔐 Change PIN code",admPinCur:"Current PIN",admPinNew:"New PIN (4 digits)",admPinRep:"Repeat new PIN",admPinSave:"Save",
+    pinChangedOk:"✅ PIN changed successfully!",pinChangedErr:"❌ Check current PIN and confirm the new PINs match.",
+    admSetExport:"📤 Data Export",admExportSub:"Download all visitor data as a CSV file.",admExportBtn:"Download CSV",
+    adm1:"First Name",adm2:"Last Name",adm3:"Company",adm4:"Visiting",adm5:"Arrival",adm6:"Departure",adm7:"Status",adm8:"Language",
+    badgeIn:"Present",badgeOut:"Departed",btnDepart:"✔ Departure",toastDep:"👋 Departure registered!",toastDel:"🗑️ Deleted.",
+    printedOn:"Printed on:",countLabel:(a,t)=>`(${a} present / ${t} total)`,
+    toastRetention:d=>`✅ Retention: ${d} days`,toastError:"⚠️ Please fill in all required fields.",confirmDelete:n=>`Delete visitor "${n}"?`},
+  de:{pageTitle:"🏢 Besucherregistrierung",back:"Zurück",welcome:"Willkommen",welcomeSub:"Registrieren Sie Ihren Besuch",tap:"BILDSCHIRM BERÜHREN",
+    tabReg:"Registrieren",formTitle:"Neuen Besucher Registrieren",privacyTitle:"🔒 Datenschutzhinweis (DSGVO)",
+    privacyText:"Ihre Daten werden auf Grundlage berechtigten Interesses zur Zugangskontrolle verarbeitet. Daten werden nach der Aufbewahrungsfrist automatisch gelöscht.",
+    lblFirst:"Vorname *",lblLast:"Nachname *",lblCompany:"Firma",lblVisiting:"Besucht *",lblArrival:"Ankunftszeit",
+    consentText:"Ich habe den Datenschutzhinweis gelesen und stimme der Verarbeitung meiner Daten zu.",
+    btnRegister:"➕ Besucher Registrieren",successTitle:"Registriert!",successSub:"Sie werden zum Startbildschirm zurückgeleitet...",
+    oskCancel:"Abbrechen",oskOk:"OK",daysUnit:"Tagen",
+    pinTitle:"Administratorzugang",pinSub:"Geben Sie Ihren PIN-Code ein",pinErr:"Falscher PIN. Bitte erneut versuchen.",
+    admTitle:"Verwaltung – Mobacc Besucherregistrierung",admLogout:"Abmelden",
+    admt1:"Übersicht",admt2:"Einstellungen",admTableTitle:"Alle Besucher",
+    admPrint:"Drucken",admDelAll:"Alles löschen",admDelConfirm:"Alle Besucherdaten löschen?",
+    statLbl1:"Anwesend",statLbl2:"Besuche heute",statLbl3:"Gesamt gespeichert",
+    admSetRet:"🔒 DSGVO Aufbewahrungsfrist",admRetLbl:"Besucher automatisch löschen nach:",
+    admSetPin:"🔐 PIN-Code ändern",admPinCur:"Aktueller PIN",admPinNew:"Neuer PIN (4 Ziffern)",admPinRep:"Neuer PIN wiederholen",admPinSave:"Speichern",
+    pinChangedOk:"✅ PIN erfolgreich geändert!",pinChangedErr:"❌ Aktuellen PIN prüfen und sicherstellen, dass neue PINs übereinstimmen.",
+    admSetExport:"📤 Datenexport",admExportSub:"Alle Besucherdaten als CSV-Datei herunterladen.",admExportBtn:"CSV herunterladen",
+    adm1:"Vorname",adm2:"Nachname",adm3:"Firma",adm4:"Besucht",adm5:"Ankunft",adm6:"Abgang",adm7:"Status",adm8:"Sprache",
+    badgeIn:"Anwesend",badgeOut:"Abgereist",btnDepart:"✔ Abgang",toastDep:"👋 Abgang registriert!",toastDel:"🗑️ Gelöscht.",
+    printedOn:"Gedruckt am:",countLabel:(a,t)=>`(${a} anwesend / ${t} gesamt)`,
+    toastRetention:d=>`✅ Aufbewahrung: ${d} Tage`,toastError:"⚠️ Bitte alle Pflichtfelder ausfüllen.",confirmDelete:n=>`Besucher "${n}" löschen?`}
+};
+
+// ===== STATE =====
+let lang=localStorage.getItem('visitor_lang')||'nl';
+let bezoekers=JSON.parse(localStorage.getItem('bezoekers_avg')||'[]');
+let termijn=parseInt(localStorage.getItem('bewaartermijn')||'30');
+let adminPin=localStorage.getItem('admin_pin')||'1234';
+let pinBuffer='';
+let longPressTimer=null;
+function T(){return TR[lang];}
+
+// ===== BHV =====
+let bhvChecked = {};
+
+function openBHV(e){ e.stopPropagation(); bhvChecked={}; renderBHV(); showScreen('screen-bhv'); }
+function closeBHV(){ showScreen('screen-welcome'); }
+function resetBHV(){ bhvChecked={}; renderBHV(); }
+
+function renderBHV(){
+  const aanwezig = bezoekers.filter(b=>!b.vertrek);
+  const total = aanwezig.length;
+  const safe = Object.values(bhvChecked).filter(Boolean).length;
+  const missing = total - safe;
+
+  document.getElementById('bhv-total').textContent = total;
+  document.getElementById('bhv-safe').textContent = safe;
+  document.getElementById('bhv-missing').textContent = missing;
+  const pct = total>0 ? Math.round(safe/total*100) : 0;
+  document.getElementById('bhv-bar').style.width = pct+'%';
+  document.getElementById('bhv-pct').textContent = pct+'%';
+  document.getElementById('bhv-all-safe').style.display = total>0 && missing===0 ? 'block' : 'none';
+
+  const list = document.getElementById('bhv-list');
+  const empty = document.getElementById('bhv-empty');
+  if(total===0){ list.innerHTML=''; list.style.display='none'; empty.style.display='block'; return; }
+  list.style.display='block'; empty.style.display='none';
+  list.innerHTML='';
+
+  const sorted = [...aanwezig].sort((a,b)=>{
+    const ac=bhvChecked[a.binnenkomst+a.voornaam]||false;
+    const bc=bhvChecked[b.binnenkomst+b.voornaam]||false;
+    return ac-bc;
+  });
+
+  const missing_items = sorted.filter(b=>!(bhvChecked[b.binnenkomst+b.voornaam]||false));
+  const safe_items    = sorted.filter(b=>  bhvChecked[b.binnenkomst+b.voornaam]||false);
+
+  function renderGroup(items, label){
+    if(items.length===0) return;
+    const lbl=document.createElement('div');
+    lbl.className='bhv-section-lbl';
+    lbl.textContent=label+' ('+items.length+')';
+    list.appendChild(lbl);
+    items.forEach(b=>{
+      const key=b.binnenkomst+b.voornaam;
+      const checked=bhvChecked[key]||false;
+      const initials=(b.voornaam[0]||'')+(b.achternaam[0]||'');
+      const card=document.createElement('div');
+      card.className='bhv-card';
+      const row=document.createElement('div');
+      row.className='bhv-row'+(checked?' checked':'');
+      row.innerHTML=`
+        <div class="bhv-check">${checked?'✓':''}</div>
+        <div class="bhv-avatar">${initials.toUpperCase()}</div>
+        <div class="bhv-info">
+          <div class="bhv-name">${b.voornaam} ${b.achternaam}</div>
+          <div class="bhv-detail">
+            <span>👤 ${b.bezoekt}</span>
+            ${b.firma?'<span>🏢 '+b.firma+'</span>':''}
+          </div>
+        </div>
+        <div class="bhv-time">⏱ ${formatDT(b.binnenkomst).split(' ')[1]||''}</div>`;
+      row.onclick=()=>{ bhvChecked[key]=!checked; renderBHV(); };
+      card.appendChild(row);
+      list.appendChild(card);
+    });
+  }
+
+  renderGroup(missing_items,'⚠️ Nog niet gezien');
+  renderGroup(safe_items,'✅ Veilig buiten');
+}
+
+// ===== SCHERMEN =====
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function naarFormulier(){showScreen('screen-form');}
+function naarWelkom(){showScreen('screen-welcome');resetFormulier();}
+function adminUit(){showScreen('screen-welcome');}
+
+// ===== LONG PRESS OP LOGO =====
+function startLongPress(e){
+  e.stopPropagation();
+  cancelLongPress();
+  document.getElementById('logo-ring').classList.add('pressing');
+  longPressTimer=setTimeout(()=>{
+    document.getElementById('logo-ring').classList.remove('pressing');
+    openPinScreen();
+  },5000);
+}
+function cancelLongPress(){
+  if(longPressTimer){clearTimeout(longPressTimer);longPressTimer=null;}
+  document.getElementById('logo-ring').classList.remove('pressing');
+}
+function openPinScreen(){
+  pinBuffer='';updatePinDots();
+  document.getElementById('pin-error').textContent='';
+  document.getElementById('pin-title').textContent=T().pinTitle;
+  document.getElementById('pin-sub').textContent=T().pinSub;
+  showScreen('screen-pin');
+}
+
+// ===== PIN =====
+function pinPress(d){
+  if(pinBuffer.length>=4) return;
+  pinBuffer+=d; updatePinDots();
+  if(pinBuffer.length===4){
+    setTimeout(()=>{
+      if(pinBuffer===adminPin){
+        pinBuffer=''; updatePinDots();
+        openAdmin();
+      } else {
+        document.getElementById('pin-error').textContent=T().pinErr;
+        pinBuffer=''; updatePinDots();
+      }
+    },200);
+  }
+}
+function pinDel(){pinBuffer=pinBuffer.slice(0,-1);updatePinDots();}
+function pinClear(){pinBuffer='';updatePinDots();}
+function updatePinDots(){
+  for(let i=0;i<4;i++) document.getElementById('pd'+i).classList.toggle('filled',i<pinBuffer.length);
+}
+
+// ===== ADMIN =====
+function openAdmin(){
+  applyAdminTranslations(); updateStats(); admToon();
+  document.getElementById('adm-termijn').value=termijn;
+  admTab('overzicht');
+  showScreen('screen-admin');
+}
+function admTab(tab){
+  ['overzicht','instellingen'].forEach(t=>{
+    document.getElementById('adm-pane-'+t).style.display=t===tab?'block':'none';
+    document.getElementById('adm-tab-'+t).classList.toggle('active',t===tab);
+  });
+  if(tab==='overzicht'){updateStats();admToon();}
+}
+
+function updateStats(){
+  const nu=new Date(), vandaagStr=nu.toDateString();
+  const aanwezig=bezoekers.filter(b=>!b.vertrek).length;
+  const vandaag=bezoekers.filter(b=>new Date(b.binnenkomst).toDateString()===vandaagStr).length;
+  document.getElementById('stat-aanwezig').textContent=aanwezig;
+  document.getElementById('stat-vandaag').textContent=vandaag;
+  document.getElementById('stat-totaal').textContent=bezoekers.length;
+}
+
+function admToon(){
+  const t=T(), tbody=document.getElementById('adm-tbody');
+  const table=document.getElementById('adm-table'), empty=document.getElementById('adm-empty');
+  tbody.innerHTML='';
+  if(bezoekers.length===0){table.style.display='none';empty.style.display='block';}
+  else{
+    table.style.display='table';empty.style.display='none';
+    bezoekers.forEach((b,i)=>{
+      const vert=!!b.vertrek, tr=document.createElement('tr');
+      tr.innerHTML=`<td>${i+1}</td><td>${b.voornaam}</td><td>${b.achternaam}</td>
+        <td>${b.firma||'—'}</td><td>${b.bezoekt}</td>
+        <td>${formatDT(b.binnenkomst)}</td>
+        <td>${b.vertrek?formatDT(b.vertrek):'—'}</td>
+        <td><span class="badge ${vert?'badge-out':'badge-in'}">${vert?t.badgeOut:t.badgeIn}</span></td>
+        <td>${b.taal||'—'}</td>
+        <td style="display:flex;gap:5px;flex-wrap:wrap">
+          ${!vert?`<button class="btn btn-success" onclick="admVertrek(${i})">${t.btnDepart}</button>`:''}
+          <button class="btn btn-danger" onclick="admVerwijder(${i})">✕</button></td>`;
+      tbody.appendChild(tr);
+    });
+  }
+  document.getElementById('adm-print-date').textContent=t.printedOn+' '+new Date().toLocaleDateString(loc(),{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+}
+
+function admVertrek(i){bezoekers[i].vertrek=nowLocal();slaOp();updateStats();admToon();toonToast(T().toastDep,'#4a4a4a');}
+function admVerwijder(i){
+  toonConfirm(T().confirmDelete(`${bezoekers[i].voornaam} ${bezoekers[i].achternaam}`), ()=>{
+    bezoekers.splice(i,1);slaOp();updateStats();admToon();toonToast(T().toastDel,'#6b6b6b');
+  });
+}
+function allesVerwijderen(){
+  toonConfirm(T().admDelConfirm, ()=>{
+    bezoekers=[];slaOp();updateStats();admToon();toonToast(T().toastDel,'#6b6b6b');
+  });
+}
+
+function wijzigPin(){
+  const cur=document.getElementById('pin-cur').value;
+  const nw=document.getElementById('pin-new').value;
+  const rp=document.getElementById('pin-rep').value;
+  const msg=document.getElementById('pin-change-msg');
+  if(cur===adminPin && nw===rp && nw.length===4 && /^\d{4}$/.test(nw)){
+    adminPin=nw; localStorage.setItem('admin_pin',adminPin);
+    msg.style.color='#38a169'; msg.textContent=T().pinChangedOk;
+    document.getElementById('pin-cur').value='';
+    document.getElementById('pin-new').value='';
+    document.getElementById('pin-rep').value='';
+  } else {
+    msg.style.color='#c0392b'; msg.textContent=T().pinChangedErr;
+  }
+}
+
+function exportCSV(){
+  const t=T();
+  const hdr=[t.adm1,t.adm2,t.adm3,t.adm4,t.adm5,t.adm6,t.adm7,t.adm8].join(';');
+  const rows=bezoekers.map(b=>[b.voornaam,b.achternaam,b.firma||'',b.bezoekt,formatDT(b.binnenkomst),b.vertrek?formatDT(b.vertrek):'',b.vertrek?t.badgeOut:t.badgeIn,b.taal||''].join(';'));
+  const csv='\uFEFF'+hdr+'\n'+rows.join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='bezoekers_mobacc_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+
+// ===== FORMULIER =====
+function resetFormulier(){
+  ['voornaam','achternaam','firma','bezoekt'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('binnenkomst').value=nowLocal();
+  document.getElementById('akkoord').checked=false; checkAkkoord();
+}
+function syncCapital(el){const p=el.selectionStart;if(el.value.length===1)el.value=el.value.toUpperCase();el.setSelectionRange(p,p);}
+function checkAkkoord(){document.getElementById('btn-registreer').disabled=!document.getElementById('akkoord').checked;}
+
+function registreer(){
+  const t=T();
+  const vn=capFirst(document.getElementById('voornaam').value.trim());
+  const an=capFirst(document.getElementById('achternaam').value.trim());
+  const fm=capFirst(document.getElementById('firma').value.trim());
+  const bz=capFirst(document.getElementById('bezoekt').value.trim());
+  const bk=document.getElementById('binnenkomst').value;
+  if(!vn||!an||!bz){toonToast(t.toastError,'#c0392b');return;}
+  bezoekers.push({voornaam:vn,achternaam:an,firma:fm,bezoekt:bz,binnenkomst:bk,vertrek:null,akkoord:true,akkoordOp:nowLocal(),taal:lang});
+  slaOp();
+  document.getElementById('s-title').textContent=t.successTitle;
+  document.getElementById('s-sub').textContent=t.successSub;
+  showScreen('screen-success');
+  setTimeout(naarWelkom,3000);
+}
+
+// ===== VERTALINGEN =====
+function setLang(l,e){
+  lang=l;localStorage.setItem('visitor_lang',l);
+  document.querySelectorAll('.wlang-btn').forEach(b=>b.classList.remove('active'));
+  e.target.closest('.wlang-btn').classList.add('active');
+  applyTranslations();
+}
+function applyTranslations(){
+  const t=T();
+  document.getElementById('t-back').textContent=t.back;
+  document.getElementById('w-title').textContent=t.welcome;
+  document.getElementById('w-sub').textContent=t.welcomeSub;
+  document.getElementById('w-tap').textContent=t.tap;
+  document.getElementById('t-tab-reg').textContent=t.tabReg;
+  document.getElementById('t-form-title').textContent=t.formTitle;
+  document.getElementById('t-privacy-title').textContent=t.privacyTitle;
+  document.getElementById('t-privacy-text').textContent=t.privacyText;
+  document.getElementById('t-lbl-first').textContent=t.lblFirst;
+  document.getElementById('t-lbl-last').textContent=t.lblLast;
+  document.getElementById('t-lbl-company').textContent=t.lblCompany;
+  document.getElementById('t-lbl-visiting').textContent=t.lblVisiting;
+  document.getElementById('t-lbl-arrival').textContent=t.lblArrival;
+  document.getElementById('t-consent-text').textContent=t.consentText;
+  document.getElementById('btn-registreer').textContent=t.btnRegister;
+  document.getElementById('s-title').textContent=t.successTitle;
+  document.getElementById('s-sub').textContent=t.successSub;
+}
+function applyAdminTranslations(){
+  const t=T();
+  document.getElementById('adm-title').textContent=t.admTitle;
+  document.getElementById('adm-logout').textContent=t.admLogout;
+  document.getElementById('adm-t1').textContent=t.admt1;
+  document.getElementById('adm-t2').textContent=t.admt2;
+  document.getElementById('adm-table-title').textContent=t.admTableTitle;
+  document.getElementById('adm-print').textContent=t.admPrint;
+  document.getElementById('adm-delall').textContent=t.admDelAll;
+  document.getElementById('stat-lbl1').textContent=t.statLbl1;
+  document.getElementById('stat-lbl2').textContent=t.statLbl2;
+  document.getElementById('stat-lbl3').textContent=t.statLbl3;
+  document.getElementById('adm-set-ret').textContent=t.admSetRet;
+  document.getElementById('adm-ret-lbl').textContent=t.admRetLbl;
+  document.getElementById('adm-days-unit').textContent=t.daysUnit;
+  document.getElementById('adm-set-pin').textContent=t.admSetPin;
+  document.getElementById('adm-pin-cur-lbl').textContent=t.admPinCur;
+  document.getElementById('adm-pin-new-lbl').textContent=t.admPinNew;
+  document.getElementById('adm-pin-rep-lbl').textContent=t.admPinRep;
+  document.getElementById('adm-pin-save').textContent=t.admPinSave;
+  document.getElementById('adm-set-export').textContent=t.admSetExport;
+  document.getElementById('adm-export-sub').textContent=t.admExportSub;
+  document.getElementById('adm-export-btn').textContent=t.admExportBtn;
+  document.getElementById('adm-th1').textContent=t.adm1;
+  document.getElementById('adm-th2').textContent=t.adm2;
+  document.getElementById('adm-th3').textContent=t.adm3;
+  document.getElementById('adm-th4').textContent=t.adm4;
+  document.getElementById('adm-th5').textContent=t.adm5;
+  document.getElementById('adm-th6').textContent=t.adm6;
+  document.getElementById('adm-th7').textContent=t.adm7;
+  document.getElementById('adm-th8').textContent=t.adm8;
+  const opts=document.getElementById('adm-termijn').options;
+  for(let o of opts) o.text=o.value+' '+t.daysUnit;
+}
+
+// ===== OSK =====
+const ROWS_L=[['q','w','e','r','t','y','u','i','o','p'],['a','s','d','f','g','h','j','k','l'],['⇧','z','x','c','v','b','n','m','⌫'],['123','–','-','.','@','SPACE','OK']];
+const ROWS_U=[['Q','W','E','R','T','Y','U','I','O','P'],['A','S','D','F','G','H','J','K','L'],['⇧','Z','X','C','V','B','N','M','⌫'],['123','–','-','.','@','SPACE','OK']];
+const ROWS_N=[['1','2','3','4','5','6','7','8','9','0'],['!','@','#','$','%','&','*','(',')','+'],['/',':',';','"',"'",'?','_','=','⌫'],['ABC','–','-','.','_','SPACE','OK']];
+let oskMode='lower',oskValue='',oskTargetId='';
+function buildOSK(){
+  const rows=oskMode==='num'?ROWS_N:oskMode==='upper'?ROWS_U:ROWS_L;
+  ['row1','row2','row3','row4'].forEach((id,ri)=>{
+    const row=document.getElementById(id);row.innerHTML='';
+    rows[ri].forEach(k=>{
+      const btn=document.createElement('button');btn.className='osk-key';
+      if(k==='SPACE'){btn.className+=' space';btn.textContent='␣';}
+      else if(k==='⌫'){btn.className+=' wide action';btn.textContent='⌫';}
+      else if(k==='OK'){btn.className+=' wide action';btn.textContent='OK';}
+      else if(k==='⇧'){btn.className+=' wide'+(oskMode==='upper'?' shift-on':'');btn.textContent='⇧';}
+      else if(k==='123'||k==='ABC'){btn.className+=' wide nums';btn.textContent=k;}
+      else if(['–','-','.','@','_'].includes(k)){btn.className+=' dark';btn.textContent=k;}
+      else{btn.textContent=k;}
+      btn.addEventListener('pointerdown',e=>{e.preventDefault();oskPress(k);});
+      row.appendChild(btn);
+    });
+  });
+  document.getElementById('osk-text-display').textContent=oskValue;
+}
+function oskPress(k){
+  if(k==='⌫'){oskValue=oskValue.slice(0,-1);}
+  else if(k==='SPACE'){oskValue+=' ';}
+  else if(k==='⇧'){oskMode=oskMode==='upper'?'lower':'upper';buildOSK();return;}
+  else if(k==='123'){oskMode='num';buildOSK();return;}
+  else if(k==='ABC'){oskMode='lower';buildOSK();return;}
+  else if(k==='OK'){confirmOSK();return;}
+  else{oskValue+=k;if(oskMode==='upper')oskMode='lower';}
+  document.getElementById('osk-text-display').textContent=oskValue;
+  buildOSK();
+}
+function openOSK(el,fieldId){
+  if(!window._lastWasTouch)return;
+  window._lastWasTouch=false;
+  oskTargetId=fieldId;oskValue=el.value;
+  oskMode=oskValue===''?'upper':'lower';
+  const t=T();
+  const labels={voornaam:t.lblFirst,achternaam:t.lblLast,firma:t.lblCompany,bezoekt:t.lblVisiting};
+  document.getElementById('osk-label').textContent=(labels[fieldId]||fieldId).replace(' *','');
+  document.getElementById('osk-cancel-btn').textContent=t.oskCancel;
+  document.getElementById('osk-ok-btn').textContent=t.oskOk;
+  buildOSK();
+  document.getElementById('osk-overlay').classList.add('open');
+}
+function closeOSK(){document.getElementById('osk-overlay').classList.remove('open');}
+function closeOnOverlay(e){if(e.target===document.getElementById('osk-overlay'))closeOSK();}
+function confirmOSK(){
+  const el=document.getElementById(oskTargetId);
+  if(el)el.value=capFirst(oskValue.trim());
+  closeOSK();
+}
+
+// ===== BEVESTIGING MODAL =====
+let _confirmCallback=null;
+function toonConfirm(msg, cb){
+  document.getElementById('cm-msg').textContent=msg;
+  _confirmCallback=cb;
+  document.getElementById('confirm-modal').classList.add('open');
+}
+function closeConfirm(){ document.getElementById('confirm-modal').classList.remove('open'); _confirmCallback=null; }
+function confirmOk(){ const cb=_confirmCallback; closeConfirm(); if(cb) cb(); }
+
+// ===== HELPERS =====
+function capFirst(s){return s?s.charAt(0).toUpperCase()+s.slice(1):s;}
+function loc(){return lang==='nl'?'nl-NL':lang==='de'?'de-DE':'en-GB';}
+function nowLocal(){const n=new Date(),p=x=>String(x).padStart(2,'0');return `${n.getFullYear()}-${p(n.getMonth()+1)}-${p(n.getDate())}T${p(n.getHours())}:${p(n.getMinutes())}`;}
+function formatDT(dt){if(!dt)return '—';const d=new Date(dt);return d.toLocaleDateString(loc())+' '+d.toLocaleTimeString(loc(),{hour:'2-digit',minute:'2-digit'});}
+function slaOp(){localStorage.setItem('bezoekers_avg',JSON.stringify(bezoekers));}
+function verwijderVerlopen(){const nu=new Date(),v=bezoekers.length;bezoekers=bezoekers.filter(b=>(nu-new Date(b.binnenkomst))/(86400000)<termijn);if(bezoekers.length<v)slaOp();}
+function slaTermijnOp(){termijn=parseInt(document.getElementById('adm-termijn').value);localStorage.setItem('bewaartermijn',termijn);verwijderVerlopen();toonToast(T().toastRetention(termijn));}
+function toonToast(msg,kleur='#c0392b'){const t=document.getElementById('toast');t.textContent=msg;t.style.background=kleur;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
+function updateTijd(){const n=new Date();document.getElementById('welcome-clock').textContent=n.toLocaleDateString(loc(),{weekday:'long',day:'numeric',month:'long',year:'numeric'})+' — '+n.toLocaleTimeString(loc(),{hour:'2-digit',minute:'2-digit',second:'2-digit'});}
+
+document.addEventListener('touchstart',()=>window._lastWasTouch=true,{passive:true});
+document.addEventListener('mousemove',()=>window._lastWasTouch=false,{passive:true});
+window._lastWasTouch=false;
+
+document.getElementById('termijn') && (document.getElementById('termijn').value=termijn);
+document.getElementById('binnenkomst').value=nowLocal();
+applyTranslations(); verwijderVerlopen();
+setInterval(updateTijd,1000); updateTijd();
+</script>
+</body>
+</html>

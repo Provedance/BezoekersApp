@@ -101,17 +101,46 @@ input:focus,select:focus{outline:none;border-color:#c0392b;background:white;}
 .retention-bar label{text-transform:none;letter-spacing:0;margin:0;}
 .retention-bar select{width:auto;padding:5px 10px;font-size:.88rem;border:1.5px solid #ddd;border-radius:6px;}
 
-table{width:100%;border-collapse:collapse;font-size:.87rem;}
+table{width:100%;border-collapse:collapse;font-size:.87rem;table-layout:fixed;}
 thead tr{background:#8b1a1a;color:white;}
 .admin-table thead tr{background:#2e2e2e;}
-th{padding:11px 12px;text-align:left;font-size:.76rem;text-transform:uppercase;letter-spacing:.4px;}
-td{padding:11px 12px;border-bottom:1px solid #eee;vertical-align:middle;}
+th{padding:10px 12px;text-align:left;font-size:.74rem;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+td{padding:10px 12px;border-bottom:1px solid #eee;vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 tr:last-child td{border-bottom:none;}
 tbody tr:nth-child(even){background:#fafafa;}
 tbody tr:hover{background:#fdf2f2;}
-.badge{display:inline-block;padding:4px 12px;border-radius:999px;font-size:.75rem;font-weight:600;}
+
+/* Kolombreedtes admin tabel */
+.admin-table th:nth-child(1),
+.admin-table td:nth-child(1){width:36px;text-align:center;color:#aaa;font-weight:600;padding-left:8px;padding-right:8px;}
+.admin-table th:nth-child(2),
+.admin-table td:nth-child(2){width:10%;}
+.admin-table th:nth-child(3),
+.admin-table td:nth-child(3){width:10%;}
+.admin-table th:nth-child(4),
+.admin-table td:nth-child(4){width:10%;}
+.admin-table th:nth-child(5),
+.admin-table td:nth-child(5){width:10%;}
+.admin-table th:nth-child(6),
+.admin-table td:nth-child(6){width:13%;}
+.admin-table th:nth-child(7),
+.admin-table td:nth-child(7){width:13%;}
+.admin-table th:nth-child(8),
+.admin-table td:nth-child(8){width:10%;}
+.admin-table th:nth-child(9),
+.admin-table td:nth-child(9){width:6%;text-align:center;}
+.admin-table th:nth-child(10),
+.admin-table td:nth-child(10){width:auto;text-overflow:clip;overflow:visible;white-space:normal;}
+
+.td-actions{display:flex;gap:6px;align-items:center;flex-wrap:nowrap;}
+.btn-tbl-depart{background:#4a4a4a;color:white;border:none;border-radius:6px;padding:6px 12px;font-size:.78rem;font-weight:600;cursor:pointer;transition:background .2s;white-space:nowrap;}
+.btn-tbl-depart:hover{background:#2e2e2e;}
+.btn-tbl-del{background:transparent;border:1.5px solid #c0392b;color:#c0392b;border-radius:6px;padding:6px 10px;font-size:.78rem;font-weight:600;cursor:pointer;transition:all .2s;}
+.btn-tbl-del:hover{background:#fdf2f2;}
+
+.badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:.73rem;font-weight:700;white-space:nowrap;}
 .badge-in{background:#c0392b;color:white;}
-.badge-out{background:#ddd;color:#555;}
+.badge-out{background:#ddd;color:#666;}
 .empty{text-align:center;padding:40px;color:#aaa;font-size:.95rem;}
 .count{margin-left:auto;font-size:.83rem;color:#888;}
 
@@ -705,10 +734,10 @@ function admToon(){
         <td>${formatDT(b.binnenkomst)}</td>
         <td>${b.vertrek?formatDT(b.vertrek):'—'}</td>
         <td><span class="badge ${vert?'badge-out':'badge-in'}">${vert?t.badgeOut:t.badgeIn}</span></td>
-        <td>${b.taal||'—'}</td>
-        <td style="display:flex;gap:5px;flex-wrap:wrap">
-          ${!vert?`<button class="btn btn-success" onclick="admVertrek(${i})">${t.btnDepart}</button>`:''}
-          <button class="btn btn-danger" onclick="admVerwijder(${i})">✕</button></td>`;
+        <td title="${b.taal||''}">🌐 ${(b.taal||'').toUpperCase()}</td>
+        <td class="td-actions">
+          ${!vert?`<button class="btn-tbl-depart" onclick="admVertrek(${i})">${t.btnDepart}</button>`:''}
+          <button class="btn-tbl-del" onclick="admVerwijder(${i})" title="Verwijderen">✕</button></td>`;
       tbody.appendChild(tr);
     });
   }

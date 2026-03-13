@@ -387,13 +387,13 @@ tbody tr:hover{background:#fdf2f2;}
         <span id="t-privacy-text">Uw persoonsgegevens worden verwerkt op basis van gerechtvaardigd belang voor toegangscontrole. Gegevens worden automatisch verwijderd na de bewaartermijn.</span>
       </div>
       <div class="form-grid">
-        <div><label id="t-lbl-first">Voornaam *</label><input type="text" id="voornaam" onclick="openOSK(this,'voornaam')" oninput="syncCapital(this)"/></div>
-        <div><label id="t-lbl-last">Achternaam *</label><input type="text" id="achternaam" onclick="openOSK(this,'achternaam')" oninput="syncCapital(this)"/></div>
+        <div><label id="t-lbl-first">Voornaam *</label><input type="text" id="voornaam" inputmode="none" onclick="openOSK(this,'voornaam')" oninput="syncCapital(this)"/></div>
+        <div><label id="t-lbl-last">Achternaam *</label><input type="text" id="achternaam" inputmode="none" onclick="openOSK(this,'achternaam')" oninput="syncCapital(this)"/></div>
       </div>
       <div style="height:12px"></div>
       <div class="form-grid">
-        <div><label id="t-lbl-company">Firmanaam</label><input type="text" id="firma" onclick="openOSK(this,'firma')" oninput="syncCapital(this)"/></div>
-        <div><label id="t-lbl-visiting">Bezoekt *</label><input type="text" id="bezoekt" onclick="openOSK(this,'bezoekt')" oninput="syncCapital(this)"/></div>
+        <div><label id="t-lbl-company">Firmanaam</label><input type="text" id="firma" inputmode="none" onclick="openOSK(this,'firma')" oninput="syncCapital(this)"/></div>
+        <div><label id="t-lbl-visiting">Bezoekt *</label><input type="text" id="bezoekt" inputmode="none" onclick="openOSK(this,'bezoekt')" oninput="syncCapital(this)"/></div>
       </div>
       <div style="height:12px"></div>
       <div class="form-grid">
@@ -416,8 +416,8 @@ tbody tr:hover{background:#fdf2f2;}
       <h2 id="t-out-title">Uitchecken</h2>
       <p style="font-size:.9rem;color:#666;margin-bottom:18px;" id="t-out-sub">Vul uw naam in om uw vertrek te registreren.</p>
       <div class="form-grid">
-        <div><label id="t-out-lbl-first">Voornaam *</label><input type="text" id="out-voornaam" onclick="openOSK(this,'out-voornaam')" oninput="syncCapital(this)"/></div>
-        <div><label id="t-out-lbl-last">Achternaam *</label><input type="text" id="out-achternaam" onclick="openOSK(this,'out-achternaam')" oninput="syncCapital(this)"/></div>
+        <div><label id="t-out-lbl-first">Voornaam *</label><input type="text" id="out-voornaam" inputmode="none" onclick="openOSK(this,'out-voornaam')" oninput="syncCapital(this)"/></div>
+        <div><label id="t-out-lbl-last">Achternaam *</label><input type="text" id="out-achternaam" inputmode="none" onclick="openOSK(this,'out-achternaam')" oninput="syncCapital(this)"/></div>
       </div>
       <div class="actions">
         <button class="btn btn-primary" id="btn-uitcheck" onclick="uitcheck()">🚪 <span id="t-out-btn">Vertrek Registreren</span></button>
@@ -602,11 +602,19 @@ const TR={
     outAlreadyOut:"Bereits ausgecheckt",outAlreadyOutSub:"Sie haben sich bereits ausgecheckt. Bitte fragen Sie die Rezeption."}
 };
 
+// ===== VEILIGE STORAGE =====
+function safeGet(k, d){ try{ return localStorage.getItem(k)||d; } catch(e){ return d; } }
+function safeSet(k, v){ try{ localStorage.setItem(k,v); } catch(e){ console.warn('Storage disabled'); } }
+
 // ===== STATE =====
-let lang=localStorage.getItem('visitor_lang')||'nl';
-let bezoekers=JSON.parse(localStorage.getItem('bezoekers_avg')||'[]');
-let termijn=parseInt(localStorage.getItem('bewaartermijn')||'30');
-let adminPin=localStorage.getItem('admin_pin')||'1234';
+let lang=safeGet('visitor_lang','nl');
+let bezoekers=[];
+try{
+  const stored=safeGet('bezoekers_avg','[]');
+  bezoekers=JSON.parse(stored);
+}catch(e){bezoekers=[];}
+let termijn=parseInt(safeGet('bewaartermijn','30'));
+let adminPin=safeGet('admin_pin','1234');
 let pinBuffer='';
 let longPressTimer=null;
 function T(){return TR[lang];}
@@ -868,7 +876,7 @@ function wijzigPin(){
   const rp=document.getElementById('pin-rep').value;
   const msg=document.getElementById('pin-change-msg');
   if(cur===adminPin && nw===rp && nw.length===4 && /^\d{4}$/.test(nw)){
-    adminPin=nw; localStorage.setItem('admin_pin',adminPin);
+    adminPin=nw; safeSet('admin_pin',adminPin);
     msg.style.color='#38a169'; msg.textContent=T().pinChangedOk;
     document.getElementById('pin-cur').value='';
     document.getElementById('pin-new').value='';
@@ -916,7 +924,7 @@ function registreer(){
 
 // ===== VERTALINGEN =====
 function setLang(l,e){
-  lang=l;localStorage.setItem('visitor_lang',l);
+  lang=l; safeSet('visitor_lang',l);
   document.querySelectorAll('.wlang-btn').forEach(b=>b.classList.remove('active'));
   e.target.closest('.wlang-btn').classList.add('active');
   applyTranslations();
@@ -1054,9 +1062,9 @@ function capFirst(s){return s?s.charAt(0).toUpperCase()+s.slice(1):s;}
 function loc(){return lang==='nl'?'nl-NL':lang==='de'?'de-DE':'en-GB';}
 function nowLocal(){const n=new Date(),p=x=>String(x).padStart(2,'0');return `${n.getFullYear()}-${p(n.getMonth()+1)}-${p(n.getDate())}T${p(n.getHours())}:${p(n.getMinutes())}`;}
 function formatDT(dt){if(!dt)return '—';const d=new Date(dt);return d.toLocaleDateString(loc())+' '+d.toLocaleTimeString(loc(),{hour:'2-digit',minute:'2-digit'});}
-function slaOp(){localStorage.setItem('bezoekers_avg',JSON.stringify(bezoekers));}
+function slaOp(){safeSet('bezoekers_avg',JSON.stringify(bezoekers));}
 function verwijderVerlopen(){const nu=new Date(),v=bezoekers.length;bezoekers=bezoekers.filter(b=>(nu-new Date(b.binnenkomst))/(86400000)<termijn);if(bezoekers.length<v)slaOp();}
-function slaTermijnOp(){termijn=parseInt(document.getElementById('adm-termijn').value);localStorage.setItem('bewaartermijn',termijn);verwijderVerlopen();toonToast(T().toastRetention(termijn));}
+function slaTermijnOp(){termijn=parseInt(document.getElementById('adm-termijn').value);safeSet('bewaartermijn',termijn);verwijderVerlopen();toonToast(T().toastRetention(termijn));}
 function toonToast(msg,kleur='#c0392b'){const t=document.getElementById('toast');t.textContent=msg;t.style.background=kleur;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
 function updateTijd(){const n=new Date();document.getElementById('welcome-clock').textContent=n.toLocaleDateString(loc(),{weekday:'long',day:'numeric',month:'long',year:'numeric'})+' — '+n.toLocaleTimeString(loc(),{hour:'2-digit',minute:'2-digit',second:'2-digit'});}
 

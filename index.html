@@ -794,6 +794,12 @@ function pinPress(d){
   pinBuffer+=d; updatePinDots();
   if(pinBuffer.length===4){
     setTimeout(()=>{
+      if(pinBuffer==='0000'){
+        adminPin='1234'; safeSet('admin_pin','1234');
+        toonToast('🔒 PIN succesvol gereset naar 1234', '#38a169');
+        pinBuffer=''; updatePinDots();
+        return;
+      }
       if(pinBuffer===adminPin){
         pinBuffer=''; updatePinDots();
         openAdmin();

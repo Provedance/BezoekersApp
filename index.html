@@ -233,6 +233,83 @@ tbody tr:hover{background:#fdf2f2;}
 .print-header{display:none;text-align:center;margin-bottom:16px;}
 .print-header h2{font-size:16pt;margin-bottom:4px;}
 .print-header p{font-size:10pt;color:#555;}
+
+/* ===== KEUZE SCHERM ===== */
+#screen-choice{background:#efefef;align-items:center;justify-content:center;flex-direction:column;}
+.choice-top{position:absolute;top:0;left:0;right:0;padding:20px 24px;display:flex;align-items:center;justify-content:space-between;}
+.choice-header{text-align:center;margin-bottom:48px;}
+.choice-header h1{font-size:2.1rem;font-weight:800;color:#333;margin-bottom:10px;}
+.choice-header p{color:#888;font-size:1.05rem;}
+.choice-cards{display:flex;gap:32px;flex-wrap:wrap;justify-content:center;padding:0 24px;}
+.choice-card{background:white;border-radius:22px;box-shadow:0 6px 32px rgba(0,0,0,.11);padding:38px 32px 34px;width:295px;text-align:center;cursor:pointer;transition:transform .22s,box-shadow .22s;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;}
+.choice-card-in{border-top:5px solid #c0392b;}
+.choice-card-out{border-top:5px solid #4a4a4a;}
+.choice-card:hover{transform:translateY(-10px);box-shadow:0 20px 56px rgba(0,0,0,.17);}
+.choice-card:active{transform:scale(.97);}
+.choice-icon-bg{width:180px;height:132px;border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;}
+.choice-icon-bg-in{background:#fdf2f2;}
+.choice-icon-bg-out{background:#f4f4f4;}
+.choice-label{font-size:1.65rem;font-weight:800;margin-bottom:8px;}
+.choice-card-in .choice-label{color:#8b1a1a;}
+.choice-card-out .choice-label{color:#2e2e2e;}
+.choice-sub{font-size:.98rem;color:#999;font-weight:500;}
+@keyframes arrowPulse{0%,100%{transform:translateX(0);}50%{transform:translateX(9px);}}
+.anim-arrow{animation:arrowPulse 1.5s ease-in-out infinite;}
+.choice-card{overflow:hidden;}
+.table-scroll{overflow-x:auto;}
+
+/* ===== PORTRAIT MODE ===== */
+@media (orientation:portrait){
+
+  /* --- Welkomstscherm --- */
+  .welcome-logo img{width:240px;height:auto;}
+  .welcome-title{font-size:2.2rem;}
+  .welcome-sub{font-size:1rem;}
+  .tap-indicator{font-size:1.15rem;padding:18px 32px;letter-spacing:2px;}
+  .welcome-clock{font-size:.88rem;}
+
+  /* --- Keuze scherm: kaarten horizontaal gestapeld --- */
+  .choice-header{margin-bottom:32px;}
+  .choice-header h1{font-size:1.8rem;}
+  .choice-header p{font-size:.95rem;}
+  .choice-cards{flex-direction:column;align-items:stretch;padding:0 28px;gap:20px;width:100%;max-width:560px;}
+  .choice-card{width:100%;display:flex;flex-direction:row;align-items:center;padding:0;text-align:left;border-top:none;border-left:6px solid #ddd;}
+  .choice-card-in{border-left-color:#c0392b;}
+  .choice-card-out{border-left-color:#4a4a4a;}
+  .choice-icon-bg{width:120px;min-width:120px;height:116px;border-radius:0;flex-shrink:0;margin:0;}
+  .choice-card-in .choice-icon-bg{border-radius:16px 0 0 16px;}
+  .choice-card-out .choice-icon-bg{border-radius:16px 0 0 16px;}
+  .choice-text{padding:0 24px;flex:1;}
+  .choice-label{font-size:1.5rem;margin-bottom:6px;}
+  .choice-sub{font-size:.9rem;}
+
+  /* --- Formulierscherm --- */
+  .container{margin:14px auto;padding:0 12px 32px;}
+  .card{padding:18px;}
+  input[type=text],input[type=datetime-local],input[type=password],select{padding:14px;}
+
+  /* --- Admin paneel --- */
+  .admin-header h1{font-size:1rem;}
+  .stat-grid{gap:10px;}
+  .stat-num{font-size:1.6rem;}
+  .stat-lbl{font-size:.76rem;}
+  .admin-card{padding:16px;}
+
+  /* --- BHV scherm --- */
+  .bhv-row{padding:12px 14px;}
+  .bhv-avatar{width:38px;height:38px;font-size:.9rem;}
+}
+
+/* Smal portrait (< 640px): form-grid 1 kolom */
+@media (orientation:portrait) and (max-width:640px){
+  .form-grid{grid-template-columns:1fr;}
+  .choice-header h1{font-size:1.55rem;}
+  .welcome-logo img{width:200px;}
+  .welcome-title{font-size:1.9rem;}
+  .tap-indicator{font-size:1rem;padding:16px 24px;}
+  .stat-grid{grid-template-columns:1fr 1fr;}
+  .stat-grid .stat-box:last-child{grid-column:span 2;}
+}
 </style>
 </head>
 <body>
@@ -268,6 +345,77 @@ tbody tr:hover{background:#fdf2f2;}
   </div>
 
   <div class="welcome-clock" id="welcome-clock"></div>
+</div>
+
+<!-- KEUZE SCHERM -->
+<div id="screen-choice" class="screen">
+  <div class="choice-top">
+    <img src="mobacc.svg" alt="Mobacc" width="160" height="35" style="display:block;">
+    <button class="back-btn" onclick="naarWelkom()">← <span id="ch-back">Terug</span></button>
+  </div>
+
+  <div class="choice-header">
+    <h1 id="ch-title">Wat wilt u doen?</h1>
+    <p id="ch-sub">Kies uw bezoektype om verder te gaan</p>
+  </div>
+
+  <div class="choice-cards">
+    <!-- INCHECKEN -->
+    <div class="choice-card choice-card-in" onclick="kiesInchecken()">
+      <div class="choice-icon-bg choice-icon-bg-in">
+        <svg viewBox="0 0 140 110" width="158" height="122" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Deur rechts -->
+          <rect x="90" y="10" width="36" height="80" rx="5" stroke="#c0392b" stroke-width="2.5" fill="#fdf2f2"/>
+          <rect x="99" y="30" width="18" height="60" rx="2" fill="#c0392b" opacity="0.13"/>
+          <circle cx="103" cy="65" r="2.8" fill="#c0392b"/>
+          <!-- Persoon links, loopt naar rechts -->
+          <circle cx="23" cy="24" r="10" fill="#c0392b"/>
+          <line x1="23" y1="34" x2="23" y2="60" stroke="#c0392b" stroke-width="4.5" stroke-linecap="round"/>
+          <line x1="23" y1="45" x2="12" y2="55" stroke="#c0392b" stroke-width="3.5" stroke-linecap="round"/>
+          <line x1="23" y1="43" x2="35" y2="38" stroke="#c0392b" stroke-width="3.5" stroke-linecap="round"/>
+          <line x1="23" y1="60" x2="14" y2="78" stroke="#c0392b" stroke-width="3.5" stroke-linecap="round"/>
+          <line x1="23" y1="60" x2="32" y2="78" stroke="#c0392b" stroke-width="3.5" stroke-linecap="round"/>
+          <!-- Pijl (geanimeerd naar rechts = naar binnen) -->
+          <g class="anim-arrow">
+            <line x1="42" y1="53" x2="78" y2="53" stroke="#c0392b" stroke-width="3" stroke-linecap="round"/>
+            <polyline points="68,44 79,53 68,62" fill="none" stroke="#c0392b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          </g>
+        </svg>
+      </div>
+      <div class="choice-text">
+        <div class="choice-label" id="ch-in-label">Inchecken</div>
+        <div class="choice-sub" id="ch-in-sub">Ik kom aan</div>
+      </div>
+    </div>
+
+    <!-- UITCHECKEN -->
+    <div class="choice-card choice-card-out" onclick="kiesUitchecken()">
+      <div class="choice-icon-bg choice-icon-bg-out">
+        <svg viewBox="0 0 140 110" width="158" height="122" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Deur links -->
+          <rect x="14" y="10" width="36" height="80" rx="5" stroke="#4a4a4a" stroke-width="2.5" fill="#f4f4f4"/>
+          <rect x="23" y="30" width="18" height="60" rx="2" fill="#4a4a4a" opacity="0.11"/>
+          <circle cx="37" cy="65" r="2.8" fill="#4a4a4a"/>
+          <!-- Pijl (geanimeerd naar rechts = naar buiten) -->
+          <g class="anim-arrow">
+            <line x1="58" y1="53" x2="94" y2="53" stroke="#4a4a4a" stroke-width="3" stroke-linecap="round"/>
+            <polyline points="84,44 95,53 84,62" fill="none" stroke="#4a4a4a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          </g>
+          <!-- Persoon rechts, loopt weg -->
+          <circle cx="117" cy="24" r="10" fill="#4a4a4a"/>
+          <line x1="117" y1="34" x2="117" y2="60" stroke="#4a4a4a" stroke-width="4.5" stroke-linecap="round"/>
+          <line x1="117" y1="43" x2="105" y2="38" stroke="#4a4a4a" stroke-width="3.5" stroke-linecap="round"/>
+          <line x1="117" y1="45" x2="128" y2="55" stroke="#4a4a4a" stroke-width="3.5" stroke-linecap="round"/>
+          <line x1="117" y1="60" x2="108" y2="78" stroke="#4a4a4a" stroke-width="3.5" stroke-linecap="round"/>
+          <line x1="117" y1="60" x2="126" y2="78" stroke="#4a4a4a" stroke-width="3.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="choice-text">
+        <div class="choice-label" id="ch-out-label">Uitchecken</div>
+        <div class="choice-sub" id="ch-out-sub">Ik vertrek</div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- PIN SCHERM -->
@@ -326,6 +474,7 @@ tbody tr:hover{background:#fdf2f2;}
       </div>
       <div class="print-header"><h2>Bezoekersregistratie – Mobacc</h2><p id="adm-print-date"></p></div>
       <div class="empty" id="adm-empty">📋 Geen bezoekers.</div>
+      <div class="table-scroll">
       <table id="adm-table" class="admin-table" style="display:none">
         <thead><tr>
           <th>#</th><th id="adm-th1">Voornaam</th><th id="adm-th2">Achternaam</th>
@@ -335,6 +484,7 @@ tbody tr:hover{background:#fdf2f2;}
         </tr></thead>
         <tbody id="adm-tbody"></tbody>
       </table>
+      </div>
     </div>
   </div>
 
@@ -549,7 +699,8 @@ const TR={
     outLblFirst:"Voornaam *",outLblLast:"Achternaam *",outBtn:"🚪 Vertrek Registreren",
     outFound:(n)=>`Tot ziens, ${n}!`,outFoundSub:"Uw vertrek is geregistreerd. Bedankt voor uw bezoek.",
     outNotFound:"Naam niet gevonden",outNotFoundSub:"Geen actief bezoek gevonden op uw naam. Vraag de receptie om hulp.",
-    outAlreadyOut:"Al uitcheckt",outAlreadyOutSub:"U bent al eerder uitcheckt. Vraag de receptie om hulp."},
+    outAlreadyOut:"Al uitcheckt",outAlreadyOutSub:"U bent al eerder uitcheckt. Vraag de receptie om hulp.",
+    chTitle:"Wat wilt u doen?",chSub:"Kies uw bezoektype om verder te gaan",chInLabel:"Inchecken",chInSub:"Ik kom aan",chOutLabel:"Uitchecken",chOutSub:"Ik vertrek"},
   en:{pageTitle:"🏢 Visitor Registration",back:"Back",welcome:"Welcome",welcomeSub:"Register your visit",tap:"TAP THE SCREEN",
     tabReg:"Register",formTitle:"Register New Visitor",privacyTitle:"🔒 Privacy Notice (GDPR)",
     privacyText:"Your personal data are processed on the basis of legitimate interest for access control. Data will be automatically deleted after the retention period.",
@@ -574,7 +725,8 @@ const TR={
     outLblFirst:"First Name *",outLblLast:"Last Name *",outBtn:"🚪 Register Departure",
     outFound:(n)=>`Goodbye, ${n}!`,outFoundSub:"Your departure has been registered. Thank you for your visit.",
     outNotFound:"Name not found",outNotFoundSub:"No active visit found for your name. Please ask reception for help.",
-    outAlreadyOut:"Already checked out",outAlreadyOutSub:"You have already checked out. Please ask reception for help."},
+    outAlreadyOut:"Already checked out",outAlreadyOutSub:"You have already checked out. Please ask reception for help.",
+    chTitle:"What would you like to do?",chSub:"Select your visit type to continue",chInLabel:"Check in",chInSub:"I am arriving",chOutLabel:"Check out",chOutSub:"I am leaving"},
   de:{pageTitle:"🏢 Besucherregistrierung",back:"Zurück",welcome:"Willkommen",welcomeSub:"Registrieren Sie Ihren Besuch",tap:"BILDSCHIRM BERÜHREN",
     tabReg:"Registrieren",formTitle:"Neuen Besucher Registrieren",privacyTitle:"🔒 Datenschutzhinweis (DSGVO)",
     privacyText:"Ihre Daten werden auf Grundlage berechtigten Interesses zur Zugangskontrolle verarbeitet. Daten werden nach der Aufbewahrungsfrist automatisch gelöscht.",
@@ -599,7 +751,8 @@ const TR={
     outLblFirst:"Vorname *",outLblLast:"Nachname *",outBtn:"🚪 Abreise registrieren",
     outFound:(n)=>`Auf Wiedersehen, ${n}!`,outFoundSub:"Ihre Abreise wurde registriert. Vielen Dank für Ihren Besuch.",
     outNotFound:"Name nicht gefunden",outNotFoundSub:"Kein aktiver Besuch für Ihren Namen gefunden. Bitte fragen Sie die Rezeption.",
-    outAlreadyOut:"Bereits ausgecheckt",outAlreadyOutSub:"Sie haben sich bereits ausgecheckt. Bitte fragen Sie die Rezeption."}
+    outAlreadyOut:"Bereits ausgecheckt",outAlreadyOutSub:"Sie haben sich bereits ausgecheckt. Bitte fragen Sie die Rezeption.",
+    chTitle:"Was möchten Sie tun?",chSub:"Wählen Sie Ihren Besuchstyp",chInLabel:"Einchecken",chInSub:"Ich komme an",chOutLabel:"Auschecken",chOutSub:"Ich verlasse"}
 };
 
 // ===== VEILIGE STORAGE =====
@@ -705,15 +858,19 @@ function resetIdleTimer(){
 }
 // Reset timer bij elke gebruikersinput op het formulierscherm
 document.addEventListener('DOMContentLoaded',()=>{
-  const form=document.getElementById('screen-form');
-  ['click','touchstart','keydown','input'].forEach(ev=>{
-    form.addEventListener(ev,resetIdleTimer,{passive:true});
+  ['screen-form','screen-choice'].forEach(sid=>{
+    const el=document.getElementById(sid);
+    ['click','touchstart','keydown','input'].forEach(ev=>{
+      el.addEventListener(ev,resetIdleTimer,{passive:true});
+    });
   });
 });
 
 // ===== SCHERMEN =====
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
-function naarFormulier(){showScreen('screen-form');showTab('reg');startIdleTimer();}
+function naarFormulier(){showScreen('screen-choice');startIdleTimer();}
+function kiesInchecken(){showScreen('screen-form');showTab('reg');startIdleTimer();}
+function kiesUitchecken(){showScreen('screen-form');showTab('out');startIdleTimer();}
 function naarWelkom(){showScreen('screen-welcome');resetFormulier();resetUitcheck();stopIdleTimer();}
 function adminUit(){showScreen('screen-welcome');stopIdleTimer();}
 
@@ -961,6 +1118,13 @@ function applyTranslations(){
   document.getElementById('t-out-lbl-first').textContent=t.outLblFirst;
   document.getElementById('t-out-lbl-last').textContent=t.outLblLast;
   document.getElementById('t-out-btn').textContent=t.outBtn;
+  document.getElementById('ch-back').textContent=t.back;
+  document.getElementById('ch-title').textContent=t.chTitle;
+  document.getElementById('ch-sub').textContent=t.chSub;
+  document.getElementById('ch-in-label').textContent=t.chInLabel;
+  document.getElementById('ch-in-sub').textContent=t.chInSub;
+  document.getElementById('ch-out-label').textContent=t.chOutLabel;
+  document.getElementById('ch-out-sub').textContent=t.chOutSub;
 }
 function applyAdminTranslations(){
   const t=T();

@@ -1,0 +1,18 @@
+{
+  "name": "Bezoekersregistratie – Mobacc",
+  "short_name": "Bezoekers",
+  "description": "Bezoekersregistratie voor Mobacc",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#efefef",
+  "theme_color": "#c0392b",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "mobacc.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

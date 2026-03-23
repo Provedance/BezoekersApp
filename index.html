@@ -233,9 +233,14 @@ tbody tr:hover{background:#fdf2f2;}
 @media print{
   @page{size:A4 portrait;margin:14mm 10mm;}
 
-  /* Verberg alles behalve het admin-overzicht */
+  /* ── Standaard (admin) print ── */
   #screen-welcome,#screen-pin,#screen-success,#screen-form,
-  #screen-choice,#screen-bhv{display:none!important;}
+  #screen-choice,#screen-bhv,#screen-floorplan{display:none!important;}
+
+  /* ── BHV print ── */
+  body.bhv-print .screen{display:none!important;}
+  body.bhv-print #bhv-print-content{display:block!important;}
+  body{overflow:visible!important;height:auto!important;}
   /* Verberg admin-navigatie en knoppen, maar houd de tabel zichtbaar */
   .admin-header,.admin-tabs,.btn-print,.btn-danger,.btn-success,
   .actions,.retention-bar,#osk-overlay,.back-btn,
@@ -683,7 +688,7 @@ tbody tr:hover{background:#fdf2f2;}
     <div id="bhv-list"></div>
     <div id="bhv-empty" style="display:none;text-align:center;padding:50px;color:#444;font-size:.95rem;">Geen bezoekers aanwezig.</div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px;">
-      <button onclick="window.print()" style="padding:13px 22px;border:none;border-radius:10px;font-size:.9rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;background:#b7600a;color:white;font-family:inherit;">🖨️ Afdrukken</button>
+      <button onclick="afdrukkenBHV()" style="padding:13px 22px;border:none;border-radius:10px;font-size:.9rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;background:#b7600a;color:white;font-family:inherit;">🖨️ Afdrukken</button>
       <button onclick="resetBHV()" style="padding:13px 22px;border:1.5px solid #2a2a2a;border-radius:10px;font-size:.9rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;background:#1c1c1c;color:#888;font-family:inherit;">↺ Reset afvinklijst</button>
     </div>
   </div>
@@ -729,6 +734,7 @@ tbody tr:hover{background:#fdf2f2;}
 </div>
 
 <div class="toast" id="toast"></div>
+<div id="bhv-print-content" style="display:none"></div>
 
 <script>
 if('serviceWorker' in navigator){
@@ -862,6 +868,59 @@ let bhvChecked = {};
 
 function openBHV(e){ e.stopPropagation(); bhvChecked={}; renderBHV(); showScreen('screen-bhv'); }
 function closeBHV(){ showScreen('screen-welcome'); }
+function afdrukkenBHV(){
+  const aanwezig=bezoekers.filter(b=>!b.vertrek);
+  const safe=Object.values(bhvChecked).filter(Boolean).length;
+  const missing=aanwezig.length-safe;
+  const notSafe=aanwezig.filter(b=>!(bhvChecked[b.binnenkomst+b.voornaam]||false));
+  const isSafe=aanwezig.filter(b=>bhvChecked[b.binnenkomst+b.voornaam]||false);
+
+  const row=b=>`<tr>
+    <td style="padding:8px;border:1px solid #ddd;font-weight:700;">${b.voornaam} ${b.achternaam}</td>
+    <td style="padding:8px;border:1px solid #ddd;">${b.bezoekt}</td>
+    <td style="padding:8px;border:1px solid #ddd;">${b.firma||'—'}</td>
+    <td style="padding:8px;border:1px solid #ddd;">${formatDT(b.binnenkomst)}</td></tr>`;
+  const tbl=(items,kleur,bg)=>`
+    <table style="width:100%;border-collapse:collapse;margin-bottom:20px;font-size:.85rem;">
+      <thead><tr style="background:${bg};">
+        <th style="padding:8px;border:1px solid #ddd;text-align:left;color:${kleur};">Naam</th>
+        <th style="padding:8px;border:1px solid #ddd;text-align:left;color:${kleur};">Bezoekt</th>
+        <th style="padding:8px;border:1px solid #ddd;text-align:left;color:${kleur};">Firma</th>
+        <th style="padding:8px;border:1px solid #ddd;text-align:left;color:${kleur};">Binnenkomst</th>
+      </tr></thead><tbody>${items.map(row).join('')}</tbody></table>`;
+
+  let html=`<div style="font-family:Arial,sans-serif;padding:20px;color:#222;">
+    <h1 style="color:#c0392b;border-bottom:3px solid #c0392b;padding-bottom:10px;margin-bottom:6px;">🚨 BHV Ontruimingslijst</h1>
+    <p style="color:#888;font-size:.82rem;margin-bottom:20px;">Afgedrukt op: ${new Date().toLocaleString(loc())}</p>
+    <div style="display:flex;gap:20px;margin-bottom:24px;">
+      <div style="border:2px solid #ccc;border-radius:8px;padding:14px 22px;text-align:center;">
+        <div style="font-size:2rem;font-weight:900;">${aanwezig.length}</div>
+        <div style="font-size:.72rem;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.5px;">Aanwezig</div>
+      </div>
+      <div style="border:2px solid #27ae60;border-radius:8px;padding:14px 22px;text-align:center;background:#eafaf1;">
+        <div style="font-size:2rem;font-weight:900;color:#1a7a47;">${safe}</div>
+        <div style="font-size:.72rem;font-weight:700;color:#27ae60;text-transform:uppercase;letter-spacing:.5px;">Veilig buiten</div>
+      </div>
+      <div style="border:2px solid #c0392b;border-radius:8px;padding:14px 22px;text-align:center;background:#fdf2f2;">
+        <div style="font-size:2rem;font-weight:900;color:#c0392b;">${missing}</div>
+        <div style="font-size:.72rem;font-weight:700;color:#c0392b;text-transform:uppercase;letter-spacing:.5px;">Niet gezien</div>
+      </div>
+    </div>`;
+
+  if(notSafe.length>0) html+=`<h3 style="color:#c0392b;margin:0 0 10px;">⚠️ Nog niet gezien (${notSafe.length})</h3>${tbl(notSafe,'#c0392b','#fdf2f2')}`;
+  if(isSafe.length>0)  html+=`<h3 style="color:#1a7a47;margin:0 0 10px;">✅ Veilig buiten (${isSafe.length})</h3>${tbl(isSafe,'#1a7a47','#eafaf1')}`;
+  if(aanwezig.length===0) html+=`<p style="text-align:center;color:#aaa;padding:40px;">Geen bezoekers aanwezig.</p>`;
+  html+=`</div>`;
+
+  document.getElementById('bhv-print-content').innerHTML=html;
+  document.body.classList.add('bhv-print');
+  window.addEventListener('afterprint',function h(){
+    document.body.classList.remove('bhv-print');
+    document.getElementById('bhv-print-content').innerHTML='';
+    window.removeEventListener('afterprint',h);
+  });
+  window.print();
+}
 function resetBHV(){ bhvChecked={}; renderBHV(); }
 
 function renderBHV(){
